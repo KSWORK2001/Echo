@@ -3,6 +3,7 @@ import {
   App,
   SystemPrompts,
   ViewChat,
+  Calendar,
   Settings,
   DevSpace,
   Shortcuts,
@@ -23,6 +24,7 @@ export default function AppRoutes() {
           <Route path="/chats/view/:conversationId" element={<ViewChat />} />
           <Route path="/shortcuts" element={<Shortcuts />} />
           <Route path="/inputs" element={<Audio />} />
+          <Route path="/calendar" element={<Calendar />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/instructions" element={<Instructions />} />
           <Route path="/dev-space" element={<DevSpace />} />

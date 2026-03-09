@@ -1,6 +1,7 @@
 import {
   Settings,
   Code,
+  CalendarDays,
   MessagesSquare,
   WandSparkles,
   SlidersHorizontalIcon,
@@ -36,6 +37,11 @@ export const useMenuItems = () => {
       icon: SlidersHorizontalIcon,
       label: "Inputs",
       href: "/inputs",
+    },
+    {
+      icon: CalendarDays,
+      label: "Calendar",
+      href: "/calendar",
     },
     {
       icon: SquareSlashIcon,

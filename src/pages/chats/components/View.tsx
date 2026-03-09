@@ -18,6 +18,7 @@ import {
   SendIcon,
   Check,
   Loader2,
+  FileText,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import moment from "moment";
@@ -46,8 +47,13 @@ const View = () => {
     deleteConfirm,
     handleAttachToOverlay,
     handleDownload,
+    handleSummarizeConversation,
+    handleDownloadSummary,
     isDownloaded,
     isAttached,
+    isSummarizing,
+    isSummaryDownloaded,
+    generatedSummary,
   } = useHistory();
 
   const completion = useChatCompletion(
@@ -128,6 +134,43 @@ const View = () => {
             )}
           </Button>
           <Button
+            variant="outline"
+            title="Generate a meeting summary"
+            className="text-[10px] lg:text-sm h-6 lg:h-8"
+            onClick={() => messages && handleSummarizeConversation(messages)}
+            disabled={!messages || isSummarizing}
+          >
+            {isSummarizing ? (
+              <>
+                Summarizing <Loader2 className="size-3 lg:size-4 animate-spin" />
+              </>
+            ) : (
+              <>
+                Summarize <FileText className="size-3 lg:size-4" />
+              </>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            title="Download generated meeting summary"
+            className="text-[10px] lg:text-sm h-6 lg:h-8"
+            onClick={(e) =>
+              generatedSummary && handleDownloadSummary(messages, generatedSummary, e)
+            }
+            disabled={!generatedSummary || isSummaryDownloaded}
+          >
+            {isSummaryDownloaded ? (
+              <>
+                <Check className="size-3 lg:size-4 text-green-600" />
+                Summary Downloaded
+              </>
+            ) : (
+              <>
+                Download Summary <Download className="size-3 lg:size-4" />
+              </>
+            )}
+          </Button>
+          <Button
             variant="destructive"
             title="Delete conversation"
             onClick={() =>
@@ -149,6 +192,16 @@ const View = () => {
         />
       ) : (
         <div className="flex flex-col gap-4 pb-24 px-2">
+          {generatedSummary && (
+            <Card className="p-4 shadow-none border border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-950/20">
+              <div className="mb-2 flex items-center gap-2">
+                <FileText className="size-4 text-emerald-600" />
+                <p className="text-sm font-semibold">Meeting Summary</p>
+              </div>
+              <Markdown>{generatedSummary}</Markdown>
+            </Card>
+          )}
+
           {messages?.messages.map((message, index, array) => {
             const isUser = message.role === "user";
             const showDate =

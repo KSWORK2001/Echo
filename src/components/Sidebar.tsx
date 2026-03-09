@@ -1,4 +1,5 @@
 import { Button } from "@/components";
+import { useCalendarEvents } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -8,6 +9,7 @@ import echoLogo from "../../images/Echo.png";
 export const Sidebar = () => {
   const { version, isLoading } = useVersion();
   const { menu, footerLinks, footerItems } = useMenuItems();
+  const { nextUpcomingEvent, status } = useCalendarEvents();
 
   const navigate = useNavigate();
   const activeRoute = useLocation().pathname;
@@ -49,6 +51,41 @@ export const Sidebar = () => {
             ) : null}
           </button>
         ))}
+
+        <div className="mx-1 mt-4 rounded-xl border border-border/60 bg-background/50 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
+            Next event
+          </p>
+
+          {status?.connected && nextUpcomingEvent ? (
+            <div className="mt-2 space-y-1">
+              <p className="truncate text-xs font-medium text-foreground/90">
+                {nextUpcomingEvent.title}
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                {nextUpcomingEvent.start
+                  ? new Date(nextUpcomingEvent.start).toLocaleString([], {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })
+                  : "Time unavailable"}
+              </p>
+              {nextUpcomingEvent.location ? (
+                <p className="truncate text-[11px] text-muted-foreground/90">
+                  {nextUpcomingEvent.location}
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              {status?.connected
+                ? "No upcoming events found."
+                : "Connect Google Calendar to see your next meeting here."}
+            </p>
+          )}
+        </div>
       </nav>
 
       <div className="flex flex-col space-y-1 px-3  pb-3">

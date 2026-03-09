@@ -3,7 +3,9 @@ import {
   getAllConversations,
   deleteConversation,
   DOWNLOAD_SUCCESS_DISPLAY_MS,
+  fetchAIResponse,
 } from "@/lib";
+import { useApp } from "@/contexts";
 import { ChatConversation } from "@/types/completion";
 
 export type UseHistoryType = ReturnType<typeof useHistory>;
@@ -17,6 +19,9 @@ export interface UseHistoryReturn {
   deleteConfirm: string | null;
   isDownloaded: boolean;
   isAttached: boolean;
+  isSummarizing: boolean;
+  isSummaryDownloaded: boolean;
+  generatedSummary: string | null;
 
   // Actions
   handleViewConversation: (conversation: ChatConversation) => void;
@@ -32,6 +37,12 @@ export interface UseHistoryReturn {
     conversation: ChatConversation | null,
     e: React.MouseEvent
   ) => void;
+  handleSummarizeConversation: (conversation: ChatConversation) => Promise<void>;
+  handleDownloadSummary: (
+    conversation: ChatConversation | null,
+    summary: string,
+    e: React.MouseEvent
+  ) => void;
   search: string;
   setSearch: React.Dispatch<React.SetStateAction<string>>;
   // Utilities
@@ -40,6 +51,7 @@ export interface UseHistoryReturn {
 }
 
 export function useHistory(): UseHistoryReturn {
+  const { selectedAIProvider, allAiProviders, systemPrompt } = useApp();
   const [isLoading, setIsLoading] = useState(false);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [search, setSearch] = useState("");
@@ -56,6 +68,9 @@ export function useHistory(): UseHistoryReturn {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [isDownloaded, setIsDownloaded] = useState(false);
   const [isAttached, setIsAttached] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [isSummaryDownloaded, setIsSummaryDownloaded] = useState(false);
+  const [generatedSummary, setGeneratedSummary] = useState<string | null>(null);
 
   // Function to refresh conversations
   const refreshConversations = useCallback(async () => {
@@ -150,6 +165,79 @@ export function useHistory(): UseHistoryReturn {
     }
   };
 
+  const handleSummarizeConversation = async (conversation: ChatConversation) => {
+    if (!selectedAIProvider.provider) {
+      throw new Error("Please select an AI provider in settings");
+    }
+
+    const provider = allAiProviders.find(
+      (item) => item.id === selectedAIProvider.provider
+    );
+
+    if (!provider) {
+      throw new Error("Invalid AI provider selected");
+    }
+
+    const transcript = conversation.messages
+      .map(
+        (message) =>
+          `${message.role === "user" ? "Speaker" : "Assistant"}: ${message.content}`
+      )
+      .join("\n\n");
+
+    const prompt =
+      "Summarize this meeting transcript into a clean professional meeting summary with these sections in plain text: Meeting Overview, Key Discussion Points, Decisions, Action Items, Risks or Follow-ups. If owners or deadlines are unclear, say that explicitly.";
+
+    setIsSummarizing(true);
+    setGeneratedSummary(null);
+
+    try {
+      let summary = "";
+      for await (const chunk of fetchAIResponse({
+        provider,
+        selectedProvider: selectedAIProvider,
+        systemPrompt: systemPrompt || undefined,
+        history: [],
+        userMessage: `${prompt}\n\nConversation title: ${conversation.title}\n\nTranscript:\n${transcript}`,
+      })) {
+        summary += chunk;
+      }
+
+      setGeneratedSummary(summary.trim());
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
+
+  const handleDownloadSummary = (
+    conversation: ChatConversation | null,
+    summary: string,
+    e: React.MouseEvent
+  ) => {
+    e.stopPropagation();
+    if (!conversation || !summary.trim()) {
+      return;
+    }
+
+    try {
+      const blob = new Blob([summary], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${generateFilename(conversation.title).replace(/\.md$/, "")}_summary.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setIsSummaryDownloaded(true);
+      setTimeout(() => {
+        setIsSummaryDownloaded(false);
+      }, DOWNLOAD_SUCCESS_DISPLAY_MS);
+    } catch (error) {
+      console.error("Failed to download summary:", error);
+    }
+  };
+
   const cancelDelete = () => {
     setDeleteConfirm(null);
   };
@@ -218,6 +306,9 @@ export function useHistory(): UseHistoryReturn {
     deleteConfirm,
     isDownloaded,
     isAttached,
+    isSummarizing,
+    isSummaryDownloaded,
+    generatedSummary,
 
     // Actions
     handleViewConversation,
@@ -227,6 +318,8 @@ export function useHistory(): UseHistoryReturn {
     cancelDelete,
     handleAttachToOverlay,
     handleDownload,
+    handleSummarizeConversation,
+    handleDownloadSummary,
     // Utilities
     refreshConversations,
     search,

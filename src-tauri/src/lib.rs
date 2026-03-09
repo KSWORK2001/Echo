@@ -1,6 +1,7 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 mod activate;
 mod api;
+mod calendar;
 mod capture;
 mod db;
 mod shortcuts;
@@ -79,6 +80,10 @@ pub fn run() {
             activate::secure_storage_save,
             activate::secure_storage_get,
             activate::secure_storage_remove,
+            calendar::calendar_begin_google_auth,
+            calendar::calendar_get_google_status,
+            calendar::calendar_sync_google_events,
+            calendar::calendar_disconnect_google,
             api::transcribe_audio,
             api::chat_stream_response,
             api::fetch_models,
