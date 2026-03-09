@@ -1,0 +1,126 @@
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::PathBuf;
+use tauri::{AppHandle, Manager};
+
+// Secure storage functions using Tauri's app data directory
+fn get_secure_storage_path(app: &AppHandle) -> Result<PathBuf, String> {
+    let app_data_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to get app data directory: {}", e))?;
+
+    // Create the directory if it doesn't exist
+    fs::create_dir_all(&app_data_dir)
+        .map_err(|e| format!("Failed to create app data directory: {}", e))?;
+
+    Ok(app_data_dir.join("secure_storage.json"))
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+struct SecureStorage {
+    license_key: Option<String>,
+    instance_id: Option<String>,
+    selected_echo_model: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct StorageItem {
+    key: String,
+    value: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct StorageResult {
+    license_key: Option<String>,
+    instance_id: Option<String>,
+    selected_echo_model: Option<String>,
+}
+
+#[tauri::command]
+pub async fn secure_storage_save(app: AppHandle, items: Vec<StorageItem>) -> Result<(), String> {
+    let storage_path = get_secure_storage_path(&app)?;
+
+    let mut storage = if storage_path.exists() {
+        let content = fs::read_to_string(&storage_path)
+            .map_err(|e| format!("Failed to read storage file: {}", e))?;
+        serde_json::from_str(&content).unwrap_or_default()
+    } else {
+        SecureStorage::default()
+    };
+
+    for item in items {
+        match item.key.as_str() {
+            "echo_license_key" => storage.license_key = Some(item.value),
+            "echo_instance_id" => storage.instance_id = Some(item.value),
+            "selected_echo_model" => storage.selected_echo_model = Some(item.value),
+            _ => return Err(format!("Invalid storage key: {}", item.key)),
+        }
+    }
+
+    let content = serde_json::to_string(&storage)
+        .map_err(|e| format!("Failed to serialize storage: {}", e))?;
+
+    fs::write(&storage_path, content)
+        .map_err(|e| format!("Failed to write storage file: {}", e))?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn secure_storage_get(app: AppHandle) -> Result<StorageResult, String> {
+    let storage_path = get_secure_storage_path(&app)?;
+
+    if !storage_path.exists() {
+        return Ok(StorageResult {
+            license_key: None,
+            instance_id: None,
+            selected_echo_model: None,
+        });
+    }
+
+    let content = fs::read_to_string(&storage_path)
+        .map_err(|e| format!("Failed to read storage file: {}", e))?;
+
+    let storage: SecureStorage = serde_json::from_str(&content)
+        .map_err(|e| format!("Failed to parse storage file: {}", e))?;
+
+    Ok(StorageResult {
+        license_key: storage.license_key,
+        instance_id: storage.instance_id,
+        selected_echo_model: storage.selected_echo_model,
+    })
+}
+
+#[tauri::command]
+pub async fn secure_storage_remove(app: AppHandle, keys: Vec<String>) -> Result<(), String> {
+    let storage_path = get_secure_storage_path(&app)?;
+
+    if !storage_path.exists() {
+        return Ok(()); // Nothing to remove
+    }
+
+    let content = fs::read_to_string(&storage_path)
+        .map_err(|e| format!("Failed to read storage file: {}", e))?;
+
+    let mut storage: SecureStorage = serde_json::from_str(&content)
+        .map_err(|e| format!("Failed to parse storage file: {}", e))?;
+
+    for key in keys {
+        match key.as_str() {
+            "echo_license_key" => storage.license_key = None,
+            "echo_instance_id" => storage.instance_id = None,
+            "selected_echo_model" => storage.selected_echo_model = None,
+            _ => return Err(format!("Invalid storage key: {}", key)),
+        }
+    }
+
+    let content = serde_json::to_string(&storage)
+        .map_err(|e| format!("Failed to serialize storage: {}", e))?;
+
+    fs::write(&storage_path, content)
+        .map_err(|e| format!("Failed to write storage file: {}", e))?;
+
+    Ok(())
+}
+

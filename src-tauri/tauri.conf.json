@@ -1,0 +1,52 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Echo",
+  "version": "1.0.0",
+  "identifier": "com.srikanthnani.echo",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "macOSPrivateApi": true,
+    "windows": [
+      {
+        "title": "Echo - AI Assistant",
+        "width": 600,
+        "height": 54,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "resizable": false,
+        "visibleOnAllWorkspaces": true,
+        "skipTaskbar": true,
+        "visible": true,
+        "center": false,
+        "contentProtected": true,
+        "focus": false,
+        "acceptFirstMouse": true,
+        "shadow": false
+      }
+    ],
+    "security": { "csp": null }
+  },
+  "bundle": {
+    "active": true,
+    "createUpdaterArtifacts": false,
+    "targets": "all",
+    "icon": [
+      "icons/echo.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": ["info.plist", "echo.desktop"],
+    "macOS": { "minimumSystemVersion": "10.13" }
+  },
+  "plugins": {
+    "sql": {
+      "preload": ["sqlite:echo.db"]
+    }
+  }
+}
