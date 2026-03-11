@@ -10,6 +10,11 @@ import {
   Markdown,
   Switch,
   CopyButton,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components";
 import { UseCompletionReturn } from "@/types";
 import { MessageHistory } from "./MessageHistory";
@@ -114,18 +119,29 @@ export const Input = ({
         <PopoverTrigger asChild className="!border-none !bg-transparent">
           <div className="relative select-none">
             <div className="absolute left-1 top-1/2 -translate-y-1/2 z-10">
-              <select
+              <Select
                 value={selectedModel || modelOptions[0] || ""}
-                onChange={(e) => handleModelChange(e.target.value)}
-                className="h-7 max-w-[160px] rounded-md border border-input bg-background px-2 text-[10px] font-medium text-foreground"
-                title="Switch model"
+                onValueChange={handleModelChange}
               >
-                {modelOptions.map((model) => (
-                  <option key={model} value={model}>
-                    {model}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger
+                  className="h-7 max-w-[160px] rounded-md border border-input bg-background px-2 text-[10px] font-medium text-foreground shadow-none"
+                  size="sm"
+                  title="Switch model"
+                >
+                  <SelectValue placeholder="Switch model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {modelOptions.map((model) => (
+                    <SelectItem
+                      key={model}
+                      value={model}
+                      className="text-[10px] font-medium"
+                    >
+                      {model}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <InputComponent
               ref={inputRef}
