@@ -10,11 +10,6 @@ import {
   Markdown,
   Switch,
   CopyButton,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from "@/components";
 import { UseCompletionReturn } from "@/types";
 import { MessageHistory } from "./MessageHistory";
@@ -52,7 +47,7 @@ export const Input = ({
   keepEngaged,
   setKeepEngaged,
 }: UseCompletionReturn & { isHidden: boolean }) => {
-  const { selectedAIProvider, onSetSelectedAIProvider } = useApp();
+  const { selectedAIProvider } = useApp();
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const selectedModel = selectedAIProvider.variables?.model?.trim() || "";
 
@@ -95,16 +90,29 @@ export const Input = ({
     return base;
   }, [availableModels, selectedModel]);
 
-  const handleModelChange = (model: string) => {
-    if (!model) return;
-    onSetSelectedAIProvider({
-      ...selectedAIProvider,
-      variables: {
-        ...selectedAIProvider.variables,
-        model,
-      },
-    });
-  };
+  const displayModel = useMemo(() => {
+    const rawModel = selectedModel || modelOptions[0] || "";
+    if (!rawModel) {
+      return "Set in settings";
+    }
+
+    return rawModel
+      .split("-")
+      .map((part, index) => {
+        if (!part) {
+          return part;
+        }
+
+        if (index === 0) {
+          return part.toUpperCase();
+        }
+
+        return /^\d+(\.\d+)*$/.test(part)
+          ? part
+          : part.charAt(0).toUpperCase() + part.slice(1);
+      })
+      .join("-");
+  }, [modelOptions, selectedModel]);
 
   return (
     <div className="relative flex-1">
@@ -118,30 +126,15 @@ export const Input = ({
       >
         <PopoverTrigger asChild className="!border-none !bg-transparent">
           <div className="relative select-none">
-            <div className="absolute left-1 top-1/2 -translate-y-1/2 z-10">
-              <Select
-                value={selectedModel || modelOptions[0] || ""}
-                onValueChange={handleModelChange}
+            <div className="absolute left-1 top-1/2 z-10 -translate-y-1/2">
+              <div
+                className="flex h-7 max-w-[170px] items-center rounded-full border border-border/60 bg-muted/50 px-3 shadow-sm backdrop-blur-sm"
+                title={selectedModel || modelOptions[0] || "Model selected in settings"}
               >
-                <SelectTrigger
-                  className="h-7 max-w-[160px] rounded-md border border-input bg-background px-2 text-[10px] font-medium text-foreground shadow-none"
-                  size="sm"
-                  title="Switch model"
-                >
-                  <SelectValue placeholder="Switch model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {modelOptions.map((model) => (
-                    <SelectItem
-                      key={model}
-                      value={model}
-                      className="text-[10px] font-medium"
-                    >
-                      {model}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <span className="truncate text-[10px] font-medium text-foreground/90">
+                  {displayModel}
+                </span>
+              </div>
             </div>
             <InputComponent
               ref={inputRef}

@@ -355,132 +355,128 @@ const SystemPrompts = () => {
     >
       {/* Error Display */}
       {error && (
-        <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 p-3">
+        <div className="mb-4 rounded-md border border-destructive/20 bg-destructive/10 p-3">
           <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
-      {/* Search Bar */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="relative w-full md:w-1/2 lg:w-1/3 select-none">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search personalities..."
-            className="h-11 pl-9 rounded-2xl border-border/50 bg-background/85 focus-visible:ring-0 focus-visible:ring-offset-0"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <Button
-          variant="default"
-          size="default"
-          onClick={handleCreateClick}
-          className="h-11 rounded-2xl px-4"
-        >
-          <PlusIcon className="size-4" />
-          Create Personality
-        </Button>
-      </div>
-
-      <div className="rounded-3xl border border-border/55 bg-card/72 p-5 space-y-4 backdrop-blur-md">
-        <div className="space-y-1">
-          <p className="text-[11px] font-semibold tracking-[0.12em] uppercase text-muted-foreground">
-            Saved Personalities
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Your active and custom personalities.
-          </p>
-        </div>
-
-        {sortedFilteredPrompts.length === 0 ? (
-          <Empty
-            isLoading={isLoading}
-            icon={WandSparklesIcon}
-            title="No personalities found"
-            description="Create a new personality to get started"
-          />
-        ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 pb-1">
-            {sortedFilteredPrompts.map((prompt) => {
-              const isSelected = selectedPromptId === prompt.id;
-              return (
-                <Card
-                  key={prompt.id}
-                  className={`relative border shadow-none p-4 pb-10 gap-0 group cursor-pointer transition-all duration-200 rounded-2xl ${
-                    isSelected
-                      ? "border-emerald-500/65 bg-emerald-500/[0.08]"
-                      : "border-border/45 bg-background/75 hover:border-emerald-500/30"
-                  }`}
-                  onClick={() => handleCardClick(prompt.id)}
-                >
-                  {isSelected && (
-                    <CheckCircle2 className="size-5 text-emerald-500 flex-shrink-0 absolute top-2 right-2" />
-                  )}
-                  <CardHeader className="p-0 pb-0 select-none">
-                    <div className="flex items-start justify-between gap-2 relative">
-                      <div className="flex-1 space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="text-[15px] font-medium line-clamp-1 flex-1 pr-3">
-                            {prompt.name}
-                          </CardTitle>
-                        </div>
-                        <CardDescription className="h-14 line-clamp-3 text-[12px] leading-relaxed">
-                          {prompt.prompt}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <div className="absolute bottom-2 left-4 w-full flex items-center justify-between">
-                    <span className="text-[10px] lg:text-xs text-muted-foreground select-none">
-                      {prompt.created_at}
-                    </span>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild className="mr-6">
-                        <button
-                          className="flex size-8 items-center justify-center rounded-xl transition-opacity hover:bg-accent"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                        >
-                          <MoreHorizontal className="size-4 text-muted-foreground" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditClick(prompt.id);
-                          }}
-                        >
-                          <Pencil className="size-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteClick(prompt.id);
-                          }}
-                        >
-                          <Trash2 className="size-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </Card>
-              );
-            })}
+      <div className="rounded-xl border border-border/60 bg-background">
+        <div className="flex flex-col gap-3 border-b border-border/60 px-5 py-4 md:flex-row md:items-center md:justify-between">
+          <div className="relative w-full md:max-w-sm select-none">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search personalities..."
+              className="h-11 border-border/50 bg-background pl-9"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
-        )}
+          <Button
+            variant="default"
+            size="default"
+            onClick={handleCreateClick}
+            className="h-11 px-4"
+          >
+            <PlusIcon className="size-4" />
+            Create Personality
+          </Button>
+        </div>
+
+        <div className="px-5 py-5">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-sm font-semibold">Saved Personalities</h2>
+              <p className="text-sm text-muted-foreground">
+                Your active and custom personalities.
+              </p>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {sortedFilteredPrompts.length} saved
+            </span>
+          </div>
+
+          {sortedFilteredPrompts.length === 0 ? (
+            <Empty
+              isLoading={isLoading}
+              icon={WandSparklesIcon}
+              title="No personalities found"
+              description="Create a new personality to get started"
+            />
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {sortedFilteredPrompts.map((prompt) => {
+                const isSelected = selectedPromptId === prompt.id;
+                return (
+                  <Card
+                    key={prompt.id}
+                    className={`relative cursor-pointer gap-0 border p-4 shadow-none transition-colors ${
+                      isSelected
+                        ? "border-emerald-500/60 bg-emerald-500/[0.06]"
+                        : "border-border/60 bg-background hover:border-emerald-500/35"
+                    }`}
+                    onClick={() => handleCardClick(prompt.id)}
+                  >
+                    {isSelected ? (
+                      <CheckCircle2 className="absolute right-4 top-4 size-4 text-emerald-500" />
+                    ) : null}
+                    <CardHeader className="space-y-2 p-0 pr-8">
+                      <CardTitle className="text-[15px] font-medium">
+                        {prompt.name}
+                      </CardTitle>
+                      <CardDescription className="line-clamp-4 min-h-20 text-[12px] leading-relaxed">
+                        {prompt.prompt}
+                      </CardDescription>
+                    </CardHeader>
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                      <span className="text-xs text-muted-foreground">
+                        {prompt.created_at}
+                      </span>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className="flex size-8 items-center justify-center rounded-md hover:bg-accent"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                          >
+                            <MoreHorizontal className="size-4 text-muted-foreground" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditClick(prompt.id);
+                            }}
+                          >
+                            <Pencil className="mr-2 size-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClick(prompt.id);
+                            }}
+                          >
+                            <Trash2 className="mr-2 size-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="rounded-3xl border border-border/55 bg-card/62 p-5 space-y-4 backdrop-blur-md">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="rounded-xl border border-border/60 bg-background">
+        <div className="flex flex-col gap-3 border-b border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.12em] uppercase text-muted-foreground">
-              Starter Templates
-            </p>
+            <h2 className="text-sm font-semibold">Starter Templates</h2>
             <p className="text-sm text-muted-foreground">
               Template-only personalities. Nothing is saved until you use one.
             </p>
@@ -495,7 +491,7 @@ const SystemPrompts = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 px-5 py-5 md:grid-cols-2 xl:grid-cols-3">
           {STARTER_PROMPT_TEMPLATES.map((template) => {
             const alreadyAdded = savedPromptNames.has(
               template.name.trim().toLowerCase()
@@ -504,11 +500,13 @@ const SystemPrompts = () => {
             return (
               <Card
                 key={template.name}
-                className="border border-border/50 bg-background/75 shadow-none p-3 gap-2 rounded-2xl"
+                className="gap-3 border border-border/60 bg-background p-4 shadow-none"
               >
-                <CardHeader className="p-0 space-y-1">
-                  <CardTitle className="text-[15px] font-medium">{template.name}</CardTitle>
-                  <CardDescription className="text-[12px] line-clamp-2">
+                <CardHeader className="space-y-2 p-0">
+                  <CardTitle className="text-[15px] font-medium">
+                    {template.name}
+                  </CardTitle>
+                  <CardDescription className="text-[12px] leading-relaxed">
                     {template.description}
                   </CardDescription>
                 </CardHeader>

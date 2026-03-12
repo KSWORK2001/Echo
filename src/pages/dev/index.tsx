@@ -392,180 +392,200 @@ const DevSpace = () => {
   return (
     <PageLayout
       title="Dev Space"
-      description="Configure reasoning providers (OpenAI, Claude, local Transformers/Hugging Face) and Whisper STT." 
+      description="Configure reasoning providers (OpenAI, Claude, local Transformers/Hugging Face) and Whisper STT."
     >
-      <div className="space-y-4">
-        <Header
-          title="Reasoning Provider"
-          description="Choose your reasoning provider and model."
-          isMainTitle
-        />
-
-        <Selection
-          selected={reasoningProvider}
-          onChange={handleReasoningProviderChange}
-          options={REASONING_PROVIDER_OPTIONS}
-          placeholder="Select reasoning provider"
-        />
-
-        <div className="space-y-2">
-          <Header
-            title={`${
-              reasoningProvider === OPENAI_PROVIDER_ID
-                ? "OpenAI"
-                : reasoningProvider === CLAUDE_PROVIDER_ID
-                ? "Claude"
-                : "Local"
-            } API Key`}
-            description={
-              reasoningProvider === LOCAL_PROVIDER_ID
-                ? "Optional for local OpenAI-compatible servers."
-                : "Used to authenticate your selected reasoning provider."
-            }
-          />
-          <Input
-            type="password"
-            placeholder={
-              reasoningProvider === CLAUDE_PROVIDER_ID
-                ? "sk-ant-..."
-                : reasoningProvider === OPENAI_PROVIDER_ID
-                ? "sk-..."
-                : "Optional"
-            }
-            value={reasoningApiKey}
-            onChange={handleReasoningApiKeyChange}
-            className="h-11 border-1 border-input/50 focus:border-primary/50 transition-colors"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Header
-            title="Whisper (STT) OpenAI API Key"
-            description="Used for speech transcription with whisper-1."
-          />
-          <Input
-            type="password"
-            placeholder="sk-..."
-            value={whisperApiKey}
-            onChange={handleWhisperApiKeyChange}
-            className="h-11 border-1 border-input/50 focus:border-primary/50 transition-colors"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Header
-            title="Reasoning Model"
-            description="Choose the reasoning model for your selected provider."
-          />
-          <Selection
-            selected={reasoningModel}
-            onChange={handleReasoningModelChange}
-            options={availableReasoningModels.map((model) => ({
-              label: model,
-              value: model,
-            }))}
-            placeholder="Select reasoning model"
-          />
-        </div>
-
-        {reasoningProvider === LOCAL_PROVIDER_ID && (
-          <div className="space-y-2">
-            <Header
-              title="Hugging Face / Transformers Cache Directory"
-              description="Browse to your .cache directory containing model blobs and weights."
-            />
-            <div className="flex gap-2">
-              <Input
-                value={localCacheDirectory}
-                onChange={(e) => {
-                  setLocalCacheDirectory(e.target.value);
-                  localStorage.setItem(
-                    LOCAL_CACHE_DIRECTORY_STORAGE_KEY,
-                    e.target.value
-                  );
-                  if (initializedRef.current) {
-                    applyConfiguration(
-                      reasoningProvider,
-                      reasoningModel,
-                      reasoningApiKey,
-                      whisperApiKey,
-                      e.target.value
-                    );
-                  }
-                }}
-                placeholder="~/.cache/huggingface/hub"
-                className="h-11 border-1 border-input/50 focus:border-primary/50 transition-colors"
+      <div className="space-y-6">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_360px]">
+          <section className="rounded-xl border border-border/60 bg-background">
+            <div className="border-b border-border/60 px-5 py-4">
+              <Header
+                title="Reasoning"
+                description="Choose the provider, model, and credentials used for chat responses."
+                isMainTitle
               />
-              <button
-                type="button"
-                onClick={handleCacheDirectoryBrowse}
-                className="h-11 px-4 rounded-xl border border-input/50 text-sm font-medium"
-              >
-                Browse
-              </button>
             </div>
-            <input
-              ref={localDirectoryInputRef}
-              type="file"
-              className="hidden"
-              // @ts-expect-error webkitdirectory is Chromium/WebView specific
-              webkitdirectory=""
-              directory=""
-              onChange={handleCacheDirectoryPicked}
-            />
-            <p className="text-xs text-muted-foreground">
-              Tip: run a local OpenAI-compatible Transformers server that reads
-              from this cache directory (for example, using Hugging Face model
-              weights).
-            </p>
-          </div>
-        )}
 
-        <Card className="shadow-none border border-border/70 rounded-xl">
-          <CardContent className="p-4 space-y-1">
-            <p className="text-sm font-medium">Configured models</p>
-            <p className="text-xs text-muted-foreground">
-              Reasoning provider: {reasoningProvider}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Reasoning model: {reasoningModel}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              STT model: {OPENAI_STT_MODEL}
-            </p>
-          </CardContent>
-        </Card>
+            <div className="space-y-5 px-5 py-5">
+              <div className="space-y-2">
+                <Header
+                  title="Reasoning Provider"
+                  description="Choose your reasoning provider and model."
+                />
+                <Selection
+                  selected={reasoningProvider}
+                  onChange={handleReasoningProviderChange}
+                  options={REASONING_PROVIDER_OPTIONS}
+                  placeholder="Select reasoning provider"
+                />
+              </div>
 
-        <Card className="shadow-none border border-border/70 rounded-xl">
-          <CardContent className="p-4 space-y-3">
-            <Header
-              title={`Test ${selectedProviderLabel} Connection`}
-              description="Runs a lightweight request with the current model and API key to verify provider connectivity."
-            />
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={runConnectionTest}
-                disabled={isTestingConnection}
-                className="h-10"
-              >
-                {isTestingConnection ? "Testing..." : "Test Connection"}
-              </Button>
-              {connectionTestStatus.message && (
-                <p
-                  className={`text-xs ${
-                    connectionTestStatus.type === "success"
-                      ? "text-emerald-600"
-                      : connectionTestStatus.type === "error"
-                      ? "text-destructive"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {connectionTestStatus.message}
-                </p>
+              <div className="grid gap-5 lg:grid-cols-2">
+                <div className="space-y-2">
+                  <Header
+                    title={`${
+                      reasoningProvider === OPENAI_PROVIDER_ID
+                        ? "OpenAI"
+                        : reasoningProvider === CLAUDE_PROVIDER_ID
+                        ? "Claude"
+                        : "Local"
+                    } API Key`}
+                    description={
+                      reasoningProvider === LOCAL_PROVIDER_ID
+                        ? "Optional for local OpenAI-compatible servers."
+                        : "Used to authenticate your selected reasoning provider."
+                    }
+                  />
+                  <Input
+                    type="password"
+                    placeholder={
+                      reasoningProvider === CLAUDE_PROVIDER_ID
+                        ? "sk-ant-..."
+                        : reasoningProvider === OPENAI_PROVIDER_ID
+                        ? "sk-..."
+                        : "Optional"
+                    }
+                    value={reasoningApiKey}
+                    onChange={handleReasoningApiKeyChange}
+                    className="h-11 border-1 border-input/50 focus:border-primary/50 transition-colors"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Header
+                    title="Reasoning Model"
+                    description="Choose the reasoning model for your selected provider."
+                  />
+                  <Selection
+                    selected={reasoningModel}
+                    onChange={handleReasoningModelChange}
+                    options={availableReasoningModels.map((model) => ({
+                      label: model,
+                      value: model,
+                    }))}
+                    placeholder="Select reasoning model"
+                  />
+                </div>
+              </div>
+
+              {reasoningProvider === LOCAL_PROVIDER_ID && (
+                <div className="space-y-2">
+                  <Header
+                    title="Hugging Face / Transformers Cache Directory"
+                    description="Browse to your .cache directory containing model blobs and weights."
+                  />
+                  <div className="flex gap-2">
+                    <Input
+                      value={localCacheDirectory}
+                      onChange={(e) => {
+                        setLocalCacheDirectory(e.target.value);
+                        localStorage.setItem(
+                          LOCAL_CACHE_DIRECTORY_STORAGE_KEY,
+                          e.target.value
+                        );
+                        if (initializedRef.current) {
+                          applyConfiguration(
+                            reasoningProvider,
+                            reasoningModel,
+                            reasoningApiKey,
+                            whisperApiKey,
+                            e.target.value
+                          );
+                        }
+                      }}
+                      placeholder="~/.cache/huggingface/hub"
+                      className="h-11 border-1 border-input/50 focus:border-primary/50 transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCacheDirectoryBrowse}
+                      className="h-11 rounded-md border border-input/50 px-4 text-sm font-medium"
+                    >
+                      Browse
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Run a local OpenAI-compatible Transformers server that reads from this cache directory.
+                  </p>
+                  <input
+                    ref={localDirectoryInputRef}
+                    type="file"
+                    className="hidden"
+                    {...({ webkitdirectory: "", directory: "" } as any)}
+                    onChange={handleCacheDirectoryPicked}
+                  />
+                </div>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </section>
+
+          <div className="space-y-6">
+            <section className="rounded-xl border border-border/60 bg-background">
+              <div className="border-b border-border/60 px-5 py-4">
+                <Header
+                  title="Speech to Text"
+                  description="Configure the Whisper key used for transcription."
+                />
+              </div>
+              <div className="px-5 py-5">
+                <div className="space-y-2">
+                  <Header
+                    title="Whisper (STT) OpenAI API Key"
+                    description="Used for speech transcription with whisper-1."
+                  />
+                  <Input
+                    type="password"
+                    placeholder="sk-..."
+                    value={whisperApiKey}
+                    onChange={handleWhisperApiKeyChange}
+                    className="h-11 border-1 border-input/50 focus:border-primary/50 transition-colors"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <Card className="rounded-xl border border-border/60 shadow-none">
+              <CardContent className="space-y-2 p-5">
+                <p className="text-sm font-medium">Current configuration</p>
+                <div className="space-y-1 text-sm text-muted-foreground">
+                  <p>Reasoning provider: {reasoningProvider}</p>
+                  <p>Reasoning model: {reasoningModel}</p>
+                  <p>STT model: {OPENAI_STT_MODEL}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-xl border border-border/60 shadow-none">
+              <CardContent className="space-y-4 p-5">
+                <Header
+                  title={`Test ${selectedProviderLabel} Connection`}
+                  description="Runs a lightweight request with the current model and API key to verify provider connectivity."
+                />
+                <div className="space-y-3">
+                  <Button
+                    onClick={runConnectionTest}
+                    disabled={isTestingConnection}
+                    className="h-10"
+                  >
+                    {isTestingConnection ? "Testing..." : "Test Connection"}
+                  </Button>
+                  {connectionTestStatus.message && (
+                    <p
+                      className={`text-xs ${
+                        connectionTestStatus.type === "success"
+                          ? "text-emerald-600"
+                          : connectionTestStatus.type === "error"
+                          ? "text-destructive"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {connectionTestStatus.message}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </PageLayout>
   );

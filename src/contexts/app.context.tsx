@@ -22,7 +22,7 @@ import curl2Json from "@bany/curl-to-json";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { enable, disable } from "@tauri-apps/plugin-autostart";
+import { enable, disable, isEnabled } from "@tauri-apps/plugin-autostart";
 import {
   ReactNode,
   createContext,
@@ -354,23 +354,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const initializeAutostart = async () => {
       try {
-        const autostartInitialized = safeLocalStorage.getItem(
-          STORAGE_KEYS.AUTOSTART_INITIALIZED
-        );
+        const pluginAutostartEnabled = await isEnabled();
+        const currentState = getCustomizableState();
+        const syncedState = {
+          ...currentState,
+          autostart: { isEnabled: pluginAutostartEnabled },
+        };
 
-        // Only apply autostart on the very first launch
-        if (!autostartInitialized) {
-          const autostartEnabled = customizable?.autostart?.isEnabled ?? true;
-
-          if (autostartEnabled) {
-            await enable();
-          } else {
-            await disable();
-          }
-
-          // Mark as initialized so this never runs again
-          safeLocalStorage.setItem(STORAGE_KEYS.AUTOSTART_INITIALIZED, "true");
-        }
+        setCustomizable((prev) => ({
+          ...prev,
+          autostart: { isEnabled: pluginAutostartEnabled },
+        }));
+        setCustomizableState(syncedState);
+        safeLocalStorage.setItem(STORAGE_KEYS.AUTOSTART_INITIALIZED, "true");
       } catch (error) {
         console.debug("Autostart initialization skipped:", error);
       }
@@ -550,19 +546,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const toggleAutostart = async (isEnabled: boolean) => {
-    const newState = updateAutostart(isEnabled);
+  const toggleAutostart = async (enabled: boolean) => {
+    const newState = updateAutostart(enabled);
     setCustomizable(newState);
     try {
-      if (isEnabled) {
+      if (enabled) {
         await enable();
       } else {
         await disable();
       }
+      const confirmedAutostartEnabled = await isEnabled();
+      const confirmedState = updateAutostart(confirmedAutostartEnabled);
+      setCustomizable(confirmedState);
       loadData();
     } catch (error) {
       console.error("Failed to toggle autostart:", error);
-      const revertedState = updateAutostart(!isEnabled);
+      const revertedState = updateAutostart(!enabled);
       setCustomizable(revertedState);
     }
   };
