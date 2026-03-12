@@ -71,14 +71,33 @@ pub fn center_window_completely(window: &WebviewWindow) -> Result<(), Box<dyn st
 }
 
 #[tauri::command]
-pub fn set_window_height(window: tauri::WebviewWindow, height: u32) -> Result<(), String> {
+pub fn set_window_height(window: tauri::WebviewWindow, height: u32, width: Option<u32>) -> Result<(), String> {
     use tauri::{LogicalSize, Size};
 
-    // Simply set the window size with fixed width and new height
-    let new_size = LogicalSize::new(600.0, height as f64);
+    let w = width.unwrap_or(600) as f64;
+    let new_size = LogicalSize::new(w, height as f64);
     window
         .set_size(Size::Logical(new_size))
         .map_err(|e| format!("Failed to resize window: {}", e))?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn resize_main_window(app: tauri::AppHandle, width: u32) -> Result<(), String> {
+    use tauri::{LogicalSize, Size};
+
+    if let Some(main_window) = app.get_webview_window("main") {
+        let current_size = main_window.outer_size().map_err(|e| format!("Failed to get window size: {}", e))?;
+        let scale = main_window.scale_factor().unwrap_or(1.0);
+        let current_logical_height = (current_size.height as f64 / scale).round() as u32;
+        let new_size = LogicalSize::new(width as f64, current_logical_height as f64);
+        main_window
+            .set_size(Size::Logical(new_size))
+            .map_err(|e| format!("Failed to resize main window: {}", e))?;
+    } else {
+        return Err("Main window not found".to_string());
+    }
 
     Ok(())
 }

@@ -36,6 +36,28 @@ const ALLOWED_ATTACHMENT_MIME_TYPES = new Set([
 const ALLOWED_ATTACHMENT_EXTENSIONS = new Set(["pdf", "txt", "doc", "docx"]);
 const MAX_TEXT_ATTACHMENT_CHARS = 12_000;
 const MAX_TOTAL_ATTACHMENT_CONTEXT_CHARS = 24_000;
+const ATTACHMENT_ONLY_PROMPT = `Analyze the picture carefully. Pretend to be me and help me answer any question or problem being displayed. This could be a coding problem, a finance question, a law question, a diagram, or anything else.
+
+For coding/algorithm problems, respond in EXACTLY this structure:
+
+**My thoughts:**
+- (bullet 1)
+- (bullet 2)
+- (bullet 3 to 5 bullets total)
+
+\`\`\`python
+(complete code here — every single line of code, including imports, class definitions, and all logic MUST be inside this one code block. NEVER write any code as plain text outside the block.)
+\`\`\`
+
+**Follow-up:**
+- "How would you optimize this?" → (brief answer)
+- "How would you reduce time/space complexity?" → (brief answer)
+
+CRITICAL: The fenced code block must contain the ENTIRE solution from the very first line (e.g. imports) to the last line. Do NOT write any code, variable assignments, or logic as plain text before or after the code block.
+
+For non-coding questions (finance, law, diagrams, concepts, etc.), give a clear, thorough answer using natural markdown formatting.
+
+Always optimize and follow best practices.`;
 
 const isAllowedAttachmentFile = (file: File): boolean => {
   if (file.type.startsWith("image/")) {
@@ -200,14 +222,21 @@ export const useCompletion = () => {
   }, []);
 
   const submit = useCallback(
-    async (speechText?: string) => {
-      const input = speechText || state.input;
-      const attachmentContext = buildAttachmentContext(state.attachedFiles);
+    async (speechText?: string, attachedFilesOverride?: AttachedFile[]) => {
+      const typedInput = speechText || state.input;
+      const attachedFiles = attachedFilesOverride ?? state.attachedFiles;
+      const hasAttachments = attachedFiles.length > 0;
+      const input =
+        typedInput.trim() || (hasAttachments ? ATTACHMENT_ONLY_PROMPT : "");
+      const attachmentContext = buildAttachmentContext(attachedFiles);
       const aiUserMessage = `${input}${attachmentContext}`;
 
       if (!input.trim()) {
         return;
       }
+
+      // Close message history when submitting so response panel shows
+      setMessageHistoryOpen(false);
 
       if (speechText) {
         setState((prev) => ({
@@ -237,8 +266,8 @@ export const useCompletion = () => {
 
         // Handle image attachments
         const imagesBase64: string[] = [];
-        if (state.attachedFiles.length > 0) {
-          state.attachedFiles.forEach((file) => {
+        if (attachedFiles.length > 0) {
+          attachedFiles.forEach((file) => {
             if (file.type.startsWith("image/")) {
               imagesBase64.push(file.base64);
             }
@@ -327,17 +356,22 @@ export const useCompletion = () => {
         }, 100);
 
         // Save the conversation after successful completion
-        if (fullResponse) {
+        if (fullResponse.trim()) {
           await saveCurrentConversation(
             input,
             fullResponse,
-            state.attachedFiles
+            attachedFiles
           );
           // Clear input and attached files after saving
           setState((prev) => ({
             ...prev,
             input: "",
             attachedFiles: [],
+          }));
+        } else {
+          setState((prev) => ({
+            ...prev,
+            error: "No response received from the model. Please try again.",
           }));
         }
       } catch (error) {
@@ -628,7 +662,7 @@ export const useCompletion = () => {
   };
 
   const handleScreenshotSubmit = useCallback(
-    async (base64: string, prompt?: string) => {
+    async (base64: string) => {
       if (state.attachedFiles.length >= MAX_FILES) {
         setState((prev) => ({
           ...prev,
@@ -637,162 +671,20 @@ export const useCompletion = () => {
         return;
       }
 
-      try {
-        if (prompt) {
-          // Auto mode: Submit directly to AI with screenshot
-          const attachedFile: AttachedFile = {
-            id: Date.now().toString(),
-            name: `screenshot_${Date.now()}.png`,
-            type: "image/png",
-            base64: base64,
-            size: base64.length,
-          };
+      const attachedFile: AttachedFile = {
+        id: Date.now().toString(),
+        name: `screenshot_${Date.now()}.png`,
+        type: "image/png",
+        base64: base64,
+        size: base64.length,
+      };
 
-          // Generate unique request ID
-          const requestId = generateRequestId();
-          currentRequestIdRef.current = requestId;
-
-          // Cancel any existing request
-          if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-          }
-
-          abortControllerRef.current = new AbortController();
-          const signal = abortControllerRef.current.signal;
-
-          try {
-            // Prepare message history for the AI
-            const messageHistory = state.conversationHistory.map((msg) => ({
-              role: msg.role,
-              content: msg.content,
-            }));
-
-            let fullResponse = "";
-
-            // Check if AI provider is configured
-            if (!selectedAIProvider.provider) {
-              setState((prev) => ({
-                ...prev,
-                error: "Please select an AI provider in settings",
-              }));
-              return;
-            }
-
-            const provider = allAiProviders.find(
-              (p) => p.id === selectedAIProvider.provider
-            );
-            if (!provider) {
-              setState((prev) => ({
-                ...prev,
-                error: "Invalid provider selected",
-              }));
-              return;
-            }
-
-            // Clear previous response and set loading state
-            setState((prev) => ({
-              ...prev,
-              input: prompt,
-              isLoading: true,
-              error: null,
-              response: "",
-            }));
-
-            // Use the fetchAIResponse function with image and signal
-            for await (const chunk of fetchAIResponse({
-              provider,
-              selectedProvider: selectedAIProvider,
-              systemPrompt: systemPrompt || undefined,
-              history: messageHistory,
-              userMessage: prompt,
-              imagesBase64: [base64],
-              signal,
-            })) {
-              // Only update if this is still the current request
-              if (currentRequestIdRef.current !== requestId || signal.aborted) {
-                return; // Request was superseded or cancelled
-              }
-
-              fullResponse += chunk;
-              setState((prev) => ({
-                ...prev,
-                response: prev.response + chunk,
-              }));
-            }
-
-            // Only proceed if this is still the current request
-            if (currentRequestIdRef.current !== requestId || signal.aborted) {
-              return;
-            }
-
-            setState((prev) => ({ ...prev, isLoading: false }));
-
-            // Focus input after screenshot AI response is complete
-            setTimeout(() => {
-              inputRef.current?.focus();
-            }, 100);
-
-            // Save the conversation after successful completion
-            if (fullResponse) {
-              await saveCurrentConversation(prompt, fullResponse, [
-                attachedFile,
-              ]);
-              // Clear input after saving
-              setState((prev) => ({
-                ...prev,
-                input: "",
-              }));
-            }
-          } catch (e: any) {
-            // Only show error if this is still the current request and not aborted
-            if (currentRequestIdRef.current === requestId && !signal.aborted) {
-              setState((prev) => ({
-                ...prev,
-                error: e.message || "An error occurred",
-              }));
-            }
-          } finally {
-            // Only update loading state if this is still the current request
-            if (currentRequestIdRef.current === requestId && !signal.aborted) {
-              setState((prev) => ({ ...prev, isLoading: false }));
-            }
-          }
-        } else {
-          // Manual mode: Add to attached files
-          const attachedFile: AttachedFile = {
-            id: Date.now().toString(),
-            name: `screenshot_${Date.now()}.png`,
-            type: "image/png",
-            base64: base64,
-            size: base64.length,
-          };
-
-          setState((prev) => ({
-            ...prev,
-            attachedFiles: [...prev.attachedFiles, attachedFile],
-          }));
-        }
-      } catch (error) {
-        console.error("Failed to process screenshot:", error);
-        setState((prev) => ({
-          ...prev,
-          error:
-            error instanceof Error
-              ? error.message
-              : "An error occurred processing screenshot",
-          isLoading: false,
-        }));
-      }
+      setState((prev) => ({
+        ...prev,
+        attachedFiles: [...prev.attachedFiles, attachedFile],
+      }));
     },
-    [
-      state.attachedFiles.length,
-      state.conversationHistory,
-      selectedAIProvider,
-      allAiProviders,
-      systemPrompt,
-      saveCurrentConversation,
-      inputRef,
-    ]
+    [state.attachedFiles.length]
   );
 
   const onRemoveAllFiles = () => {
@@ -845,10 +737,11 @@ export const useCompletion = () => {
   );
 
   const isPopoverOpen =
-    state.isLoading ||
-    state.response !== "" ||
-    state.error !== null ||
-    keepEngaged;
+    !messageHistoryOpen &&
+    (state.isLoading ||
+      state.response !== "" ||
+      state.error !== null ||
+      keepEngaged);
 
   useEffect(() => {
     resizeWindow(
@@ -974,14 +867,7 @@ export const useCompletion = () => {
 
       if (config.enabled) {
         const base64 = await invoke("capture_to_base64");
-
-        if (config.mode === "auto") {
-          // Auto mode: Submit directly to AI with the configured prompt
-          await handleScreenshotSubmit(base64 as string, config.autoPrompt);
-        } else if (config.mode === "manual") {
-          // Manual mode: Add to attached files without prompt
-          await handleScreenshotSubmit(base64 as string);
-        }
+        await handleScreenshotSubmit(base64 as string);
         screenshotInitiatedByThisContext.current = false;
       } else {
         // Selection Mode: Open overlay to select an area
@@ -1017,16 +903,9 @@ export const useCompletion = () => {
 
         isProcessingScreenshotRef.current = true;
         const base64 = event.payload;
-        const config = screenshotConfigRef.current;
 
         try {
-          if (config.mode === "auto") {
-            // Auto mode: Submit directly to AI with the configured prompt
-            await handleScreenshotSubmit(base64 as string, config.autoPrompt);
-          } else if (config.mode === "manual") {
-            // Manual mode: Add to attached files without prompt
-            await handleScreenshotSubmit(base64 as string);
-          }
+          await handleScreenshotSubmit(base64 as string);
         } catch (error) {
           console.error("Error processing selection:", error);
         } finally {

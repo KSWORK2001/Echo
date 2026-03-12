@@ -1,8 +1,8 @@
 [package]
 name = "echo"
-version = "1.0.0"
+version = "0.7.0"
 description = "The Open Source Alternative to Cluely - A lightning-fast, privacy-first AI assistant that works seamlessly during meetings, interviews, and conversations without anyone knowing."
-authors = ["Srikanth Nani <srikanthnani1202@gmail.com>"]
+authors = ["Karan Shrivastava <work.karan2001@gmail.com>"]
 license = "GPL-3.0"
 readme = "../README.md"
 keywords = ["ai-assistant", "tauri", "desktop-app", "privacy-first", "meeting-assistant"]

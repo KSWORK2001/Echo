@@ -122,8 +122,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [screenshotConfiguration, setScreenshotConfiguration] =
     useState<ScreenshotConfig>({
-      mode: "manual",
-      autoPrompt: "Analyze this screenshot and provide insights",
       enabled: true,
     });
 
@@ -153,8 +151,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const autoConfigsEnabled = localStorage.getItem("auto-configs-enabled");
     if (!autoConfigsEnabled) {
       setScreenshotConfiguration({
-        mode: "auto",
-        autoPrompt: "Analyze the screenshot and provide insights",
         enabled: false,
       });
       // Set the flag to true so that we don't change the mode again
@@ -204,10 +200,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const parsed = JSON.parse(savedScreenshotConfig);
         if (typeof parsed === "object" && parsed !== null) {
           setScreenshotConfiguration({
-            mode: parsed.mode || "manual",
-            autoPrompt:
-              parsed.autoPrompt ||
-              "Analyze this screenshot and provide insights",
             enabled: parsed.enabled !== undefined ? parsed.enabled : false,
           });
         }

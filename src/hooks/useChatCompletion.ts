@@ -33,6 +33,28 @@ const ALLOWED_ATTACHMENT_MIME_TYPES = new Set([
 const ALLOWED_ATTACHMENT_EXTENSIONS = new Set(["pdf", "txt", "doc", "docx"]);
 const MAX_TEXT_ATTACHMENT_CHARS = 12_000;
 const MAX_TOTAL_ATTACHMENT_CONTEXT_CHARS = 24_000;
+const ATTACHMENT_ONLY_PROMPT = `Analyze the picture carefully. Pretend to be me and help me answer any question or problem being displayed. This could be a coding problem, a finance question, a law question, a diagram, or anything else.
+
+For coding/algorithm problems, respond in EXACTLY this structure:
+
+**My thoughts:**
+- (bullet 1)
+- (bullet 2)
+- (bullet 3 to 5 bullets total)
+
+\`\`\`python
+(complete code here — every single line of code, including imports, class definitions, and all logic MUST be inside this one code block. NEVER write any code as plain text outside the block.)
+\`\`\`
+
+**Follow-up:**
+- "How would you optimize this?" → (brief answer)
+- "How would you reduce time/space complexity?" → (brief answer)
+
+CRITICAL: The fenced code block must contain the ENTIRE solution from the very first line (e.g. imports) to the last line. Do NOT write any code, variable assignments, or logic as plain text before or after the code block.
+
+For non-coding questions (finance, law, diagrams, concepts, etc.), give a clear, thorough answer using natural markdown formatting.
+
+Always optimize and follow best practices.`;
 
 const isAllowedAttachmentFile = (file: File): boolean => {
   if (file.type.startsWith("image/")) {
@@ -95,6 +117,7 @@ interface ChatMessage {
   role: "user" | "assistant" | "system";
   content: string;
   timestamp: number;
+  attachedFiles?: AttachedFile[];
 }
 
 interface ChatConversation {
@@ -196,9 +219,13 @@ export const useChatCompletion = (
   }, []);
 
   const submit = useCallback(
-    async (speechText?: string) => {
-      const input = speechText || state.input;
-      const attachmentContext = buildAttachmentContext(state.attachedFiles);
+    async (speechText?: string, attachedFilesOverride?: AttachedFile[]) => {
+      const typedInput = speechText || state.input;
+      const attachedFiles = attachedFilesOverride ?? state.attachedFiles;
+      const input =
+        typedInput.trim() ||
+        (attachedFiles.length > 0 ? ATTACHMENT_ONLY_PROMPT : "");
+      const attachmentContext = buildAttachmentContext(attachedFiles);
       const aiUserMessage = `${input}${attachmentContext}`;
 
       if (!input.trim()) {
@@ -233,14 +260,13 @@ export const useChatCompletion = (
 
         // Handle image attachments
         const imagesBase64: string[] = [];
-        if (state.attachedFiles.length > 0) {
-          state.attachedFiles.forEach((file) => {
+        if (attachedFiles.length > 0) {
+          attachedFiles.forEach((file) => {
             if (file.type.startsWith("image/")) {
               imagesBase64.push(file.base64);
             }
           });
         }
-
         // Check if AI provider is configured
         if (!selectedAIProvider.provider) {
           setState((prev) => ({
@@ -268,6 +294,7 @@ export const useChatCompletion = (
           role: "user",
           content: input,
           timestamp,
+          attachedFiles: attachedFiles.length > 0 ? attachedFiles : undefined,
         };
 
         const updatedMessages = {
@@ -282,7 +309,15 @@ export const useChatCompletion = (
           input: "",
           isLoading: true,
           error: null,
-          attachedFiles: [],
+          attachedFiles:
+            attachedFilesOverride && attachedFilesOverride.length > 0
+              ? prev.attachedFiles.filter(
+                  (file) =>
+                    !attachedFilesOverride.some(
+                      (overrideFile) => overrideFile.id === file.id
+                    )
+                )
+              : [],
         }));
 
         // Scroll to bottom after adding user message
@@ -371,7 +406,7 @@ export const useChatCompletion = (
         }, 100);
 
         // Save the conversation after successful completion
-        if (fullResponse) {
+        if (fullResponse.trim()) {
           const assistantMsg: ChatMessage = {
             id: generateMessageId("assistant", timestamp + MESSAGE_ID_OFFSET),
             role: "assistant",
@@ -401,14 +436,11 @@ export const useChatCompletion = (
             generateConversationTitle(input);
 
           const conversation: ChatConversation = {
-            id: conversationId,
+            id: conversationId || crypto.randomUUID(),
             title,
             messages: newMessages,
-            createdAt:
-              existingConversation?.createdAt ||
-              messages?.createdAt ||
-              timestamp,
-            updatedAt: timestamp,
+            createdAt: existingConversation?.createdAt || Date.now(),
+            updatedAt: Date.now(),
           };
 
           try {
@@ -416,7 +448,7 @@ export const useChatCompletion = (
 
             // Reload conversation from database to ensure consistency
             const updatedConversation = await getConversationById(
-              conversationId
+              conversation.id
             );
             if (updatedConversation) {
               setMessages(updatedConversation);
@@ -428,6 +460,11 @@ export const useChatCompletion = (
               error: "Failed to save conversation. Please try again.",
             }));
           }
+        } else {
+          setState((prev) => ({
+            ...prev,
+            error: "No response received from the model. Please try again.",
+          }));
         }
       } catch (error) {
         // Only show error if not aborted
@@ -441,13 +478,13 @@ export const useChatCompletion = (
       }
     },
     [
+      conversationId,
       state.input,
       state.attachedFiles,
       selectedAIProvider,
       allAiProviders,
       systemPrompt,
       messages,
-      conversationId,
       setMessages,
     ]
   );
@@ -512,7 +549,7 @@ export const useChatCompletion = (
   };
 
   const handleScreenshotSubmit = useCallback(
-    async (base64: string, prompt?: string) => {
+    async (base64: string) => {
       if (state.attachedFiles.length >= MAX_FILES) {
         setState((prev) => ({
           ...prev,
@@ -521,54 +558,20 @@ export const useChatCompletion = (
         return;
       }
 
-      try {
-        if (prompt) {
-          // Auto mode: Submit directly to AI with screenshot
-          const attachedFile: AttachedFile = {
-            id: Date.now().toString(),
-            name: `screenshot_${Date.now()}.png`,
-            type: "image/png",
-            base64: base64,
-            size: base64.length,
-          };
+      const attachedFile: AttachedFile = {
+        id: Date.now().toString(),
+        name: `screenshot_${Date.now()}.png`,
+        type: "image/png",
+        base64: base64,
+        size: base64.length,
+      };
 
-          // Store files temporarily and submit
-          setState((prev) => ({
-            ...prev,
-            attachedFiles: [...prev.attachedFiles, attachedFile],
-            input: prompt,
-          }));
-
-          // Submit with the prompt and screenshot
-          setTimeout(() => submit(prompt), 100);
-        } else {
-          // Manual mode: Add to attached files
-          const attachedFile: AttachedFile = {
-            id: Date.now().toString(),
-            name: `screenshot_${Date.now()}.png`,
-            type: "image/png",
-            base64: base64,
-            size: base64.length,
-          };
-
-          setState((prev) => ({
-            ...prev,
-            attachedFiles: [...prev.attachedFiles, attachedFile],
-          }));
-        }
-      } catch (error) {
-        console.error("Failed to process screenshot:", error);
-        setState((prev) => ({
-          ...prev,
-          error:
-            error instanceof Error
-              ? error.message
-              : "An error occurred processing screenshot",
-          isLoading: false,
-        }));
-      }
+      setState((prev) => ({
+        ...prev,
+        attachedFiles: [...prev.attachedFiles, attachedFile],
+      }));
     },
-    [state.attachedFiles.length, submit]
+    [state.attachedFiles.length]
   );
 
   const onRemoveAllFiles = () => {
@@ -666,15 +669,7 @@ export const useChatCompletion = (
 
       if (config.enabled) {
         const base64 = await invoke("capture_to_base64");
-
-        if (config.mode === "auto") {
-          // Auto mode: Submit directly to AI with the configured prompt
-          await handleScreenshotSubmit(base64 as string, config.autoPrompt);
-        } else if (config.mode === "manual") {
-          // Manual mode: Add to attached files without prompt
-          await handleScreenshotSubmit(base64 as string);
-        }
-        // Reset flag after processing
+        await handleScreenshotSubmit(base64 as string);
         screenshotInitiatedByThisContext.current = false;
       } else {
         // Selection Mode: Open overlay to select an area
@@ -711,16 +706,9 @@ export const useChatCompletion = (
 
         isProcessingScreenshotRef.current = true;
         const base64 = event.payload;
-        const config = screenshotConfigRef.current;
 
         try {
-          if (config.mode === "auto") {
-            // Auto mode: Submit directly to AI with the configured prompt
-            await handleScreenshotSubmit(base64 as string, config.autoPrompt);
-          } else if (config.mode === "manual") {
-            // Manual mode: Add to attached files without prompt
-            await handleScreenshotSubmit(base64 as string);
-          }
+          await handleScreenshotSubmit(base64 as string);
         } catch (error) {
           console.error("Error processing selection:", error);
         } finally {

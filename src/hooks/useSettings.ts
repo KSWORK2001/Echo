@@ -31,24 +31,6 @@ export const useSettings = () => {
 
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
 
-  const handleScreenshotModeChange = (value: "auto" | "manual") => {
-    const newConfig = { ...screenshotConfiguration, mode: value };
-    setScreenshotConfiguration(newConfig);
-    safeLocalStorage.setItem(
-      STORAGE_KEYS.SCREENSHOT_CONFIG,
-      JSON.stringify(newConfig)
-    );
-  };
-
-  const handleScreenshotPromptChange = (value: string) => {
-    const newConfig = { ...screenshotConfiguration, autoPrompt: value };
-    setScreenshotConfiguration(newConfig);
-    safeLocalStorage.setItem(
-      STORAGE_KEYS.SCREENSHOT_CONFIG,
-      JSON.stringify(newConfig)
-    );
-  };
-
   const handleScreenshotEnabledChange = (enabled: boolean) => {
     const newConfig = { ...screenshotConfiguration, enabled };
     setScreenshotConfiguration(newConfig);
@@ -94,8 +76,6 @@ export const useSettings = () => {
   return {
     screenshotConfiguration,
     setScreenshotConfiguration,
-    handleScreenshotModeChange,
-    handleScreenshotPromptChange,
     handleScreenshotEnabledChange,
     allAiProviders,
     allSttProviders,

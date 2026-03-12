@@ -322,6 +322,7 @@ const View = () => {
                     attachedFiles={completion.attachedFiles}
                     isLoading={completion.isLoading}
                     captureScreenshot={completion.captureScreenshot}
+                    submit={completion.submit}
                     isScreenshotLoading={completion.isScreenshotLoading}
                     disabled={!supportsImages}
                   />

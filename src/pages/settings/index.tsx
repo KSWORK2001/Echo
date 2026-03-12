@@ -1,4 +1,6 @@
+import { useState } from "react";
 import {
+  Button,
   Select,
   SelectContent,
   SelectItem,
@@ -9,18 +11,35 @@ import {
 } from "@/components";
 import { useApp, useTheme } from "@/contexts";
 import { PageLayout } from "@/layouts";
-import { Monitor, Palette, PlaySquare, Rows3, Sparkles, Workflow } from "lucide-react";
+import { Monitor, Palette, PlaySquare, Rows3, Sparkles, Workflow, MoveHorizontal, RotateCw } from "lucide-react";
 import {
   AutoScrollToggle,
   LanguageSelector,
   ResponseLength,
 } from "../responses/components";
+import { STORAGE_KEYS } from "@/config";
+import { safeLocalStorage } from "@/lib";
+import { invoke } from "@tauri-apps/api/core";
 
 type AppTheme = "dark" | "light" | "system";
 
 const Settings = () => {
   const { customizable, toggleAppIconVisibility, toggleAlwaysOnTop, toggleAutostart } = useApp();
   const { theme, setTheme, transparency, onSetTransparency } = useTheme();
+
+  const [floatingWidth, setFloatingWidth] = useState(() => {
+    const stored = safeLocalStorage.getItem(STORAGE_KEYS.FLOATING_WINDOW_WIDTH);
+    if (stored) {
+      const parsed = parseInt(stored, 10);
+      if (!isNaN(parsed) && parsed >= 600 && parsed <= 1600) return parsed;
+    }
+    return 600;
+  });
+
+  const handleFloatingWidthChange = (value: number) => {
+    setFloatingWidth(value);
+    safeLocalStorage.setItem(STORAGE_KEYS.FLOATING_WINDOW_WIDTH, String(value));
+  };
 
   return (
     <PageLayout
@@ -87,11 +106,56 @@ const Settings = () => {
                 </div>
                 <Slider
                   min={0}
-                  max={40}
+                  max={100}
                   step={1}
                   value={[transparency]}
                   onValueChange={([value]) => onSetTransparency(value)}
                 />
+              </div>
+
+              <div className="space-y-4 px-5 py-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <MoveHorizontal className="h-4 w-4 text-primary" />
+                      Floating Window Width
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Adjust the width of the floating input bar. Takes effect on next resize.
+                    </p>
+                  </div>
+                  <span className="text-sm font-medium tabular-nums text-foreground/80">
+                    {floatingWidth}px
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Slider
+                    min={600}
+                    max={1600}
+                    step={50}
+                    value={[floatingWidth]}
+                    onValueChange={([value]) => handleFloatingWidthChange(value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0 gap-1.5 text-xs"
+                    onClick={async () => {
+                      try {
+                        await invoke("resize_main_window", {
+                          width: floatingWidth,
+                        });
+                      } catch (e) {
+                        console.error("Failed to apply width:", e);
+                      }
+                    }}
+                    title="Apply the new floating window width"
+                  >
+                    <RotateCw className="h-3 w-3" />
+                    Apply
+                  </Button>
+                </div>
               </div>
             </div>
           </section>

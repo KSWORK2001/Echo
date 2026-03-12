@@ -1,12 +1,12 @@
 {
   "name": "echo",
   "private": false,
-  "version": "1.0.0",
+  "version": "0.7.0",
   "description": "The Open Source Alternative to Cluely - A lightning-fast, privacy-first AI assistant that works seamlessly during meetings, interviews, and conversations without anyone knowing.",
   "author": {
-    "name": "Srikanth Nani",
-    "email": "srikanthnani1202@gmail.com",
-    "url": "https://www.srikanthnani.com"
+    "name": "Karan Shrivastava",
+    "email": "work.karan2001@gmail.com",
+    "url": "www.kswork2001.github.io/portfolio"
   },
   "license": "GPL-3.0",
   "keywords": [

@@ -1,6 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useCallback, useEffect } from "react";
+import { STORAGE_KEYS } from "@/config";
+import { safeLocalStorage } from "@/lib";
+
+const DEFAULT_FLOATING_WIDTH = 600;
 
 // Helper function to check if any popover is open in the DOM
 const isAnyPopoverOpen = (): boolean => {
@@ -8,6 +12,15 @@ const isAnyPopoverOpen = (): boolean => {
     "[data-radix-popper-content-wrapper]"
   );
   return popoverContents.length > 0;
+};
+
+const getFloatingWidth = (): number => {
+  const stored = safeLocalStorage.getItem(STORAGE_KEYS.FLOATING_WINDOW_WIDTH);
+  if (stored) {
+    const parsed = parseInt(stored, 10);
+    if (!isNaN(parsed) && parsed >= 600 && parsed <= 1600) return parsed;
+  }
+  return DEFAULT_FLOATING_WIDTH;
 };
 
 export const useWindowResize = () => {
@@ -20,10 +33,12 @@ export const useWindowResize = () => {
       }
 
       const newHeight = expanded ? 600 : 54;
+      const width = getFloatingWidth();
 
       await invoke("set_window_height", {
         window,
         height: newHeight,
+        width,
       });
     } catch (error) {
       console.error("Failed to resize window:", error);
