@@ -13,6 +13,10 @@ const normalizeProfile = (profile: ProfileData): ProfileData => ({
   ...profile,
   summary: clampText(profile.summary || "", MAX_PROFILE_SUMMARY_CHARS),
   resumeText: clampText(profile.resumeText || "", MAX_PROFILE_RESUME_CHARS),
+  generatedProfile:
+    profile.generatedProfile && typeof profile.generatedProfile === "object"
+      ? profile.generatedProfile
+      : null,
 });
 
 export const getProfile = (): ProfileData | null => {
@@ -29,6 +33,10 @@ export const getProfile = (): ProfileData | null => {
       resumeText:
         typeof parsed.resumeText === "string" ? parsed.resumeText : "",
       resumeFile: parsed.resumeFile ?? null,
+      generatedProfile:
+        parsed.generatedProfile && typeof parsed.generatedProfile === "object"
+          ? parsed.generatedProfile
+          : null,
       createdAt:
         typeof parsed.createdAt === "number" ? parsed.createdAt : Date.now(),
       updatedAt:
@@ -62,6 +70,10 @@ export const updateProfile = (updates: Partial<ProfileData>): ProfileData => {
       updates.resumeFile !== undefined
         ? updates.resumeFile
         : current?.resumeFile ?? null,
+    generatedProfile:
+      updates.generatedProfile !== undefined
+        ? updates.generatedProfile
+        : current?.generatedProfile ?? null,
     createdAt: current?.createdAt ?? now,
     updatedAt: now,
   });
@@ -90,6 +102,10 @@ export const buildProfileContext = (profile: ProfileData | null): string => {
 
   if (resumeText) {
     lines.push(`Resume details: ${resumeText}`);
+  } else if (profile.generatedProfile) {
+    lines.push(
+      `Structured profile JSON: ${JSON.stringify(profile.generatedProfile).slice(0, MAX_PROFILE_CONTEXT_CHARS)}`
+    );
   } else if (profile.resumeFile?.name) {
     lines.push(
       `Resume file uploaded (${profile.resumeFile.name}), but no readable text was extracted yet.`

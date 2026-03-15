@@ -60,6 +60,7 @@ export async function* fetchAIResponse(params: {
     variables: Record<string, string>;
   };
   systemPrompt?: string;
+  useEnhancedSystemPrompt?: boolean;
   history?: Message[];
   userMessage: string;
   imagesBase64?: string[];
@@ -70,6 +71,7 @@ export async function* fetchAIResponse(params: {
       provider,
       selectedProvider,
       systemPrompt,
+      useEnhancedSystemPrompt = true,
       history = [],
       userMessage,
       imagesBase64 = [],
@@ -81,7 +83,9 @@ export async function* fetchAIResponse(params: {
       return;
     }
 
-    const enhancedSystemPrompt = buildEnhancedSystemPrompt(systemPrompt);
+    const finalSystemPrompt = useEnhancedSystemPrompt
+      ? buildEnhancedSystemPrompt(systemPrompt)
+      : systemPrompt || "";
 
     if (!provider) {
       throw new Error(`Provider not provided`);
@@ -149,7 +153,7 @@ export async function* fetchAIResponse(params: {
           value,
         ])
       ),
-      SYSTEM_PROMPT: enhancedSystemPrompt || "",
+      SYSTEM_PROMPT: finalSystemPrompt,
     };
 
     bodyObj = deepVariableReplacer(bodyObj, allVariables);
