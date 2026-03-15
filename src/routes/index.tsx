@@ -10,6 +10,7 @@ import {
   Audio,
   Instructions,
   Chats,
+  Profile,
 } from "@/pages";
 import { DashboardLayout } from "@/layouts";
 
@@ -25,6 +26,7 @@ export default function AppRoutes() {
           <Route path="/shortcuts" element={<Shortcuts />} />
           <Route path="/inputs" element={<Audio />} />
           <Route path="/calendar" element={<Calendar />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/instructions" element={<Instructions />} />
           <Route path="/dev-space" element={<DevSpace />} />

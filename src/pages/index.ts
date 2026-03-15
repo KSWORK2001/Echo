@@ -8,3 +8,4 @@ export { default as Shortcuts } from "./shortcuts";
 export { default as Audio } from "./audio";
 export { default as Instructions } from "./instructions/index";
 export { default as Calendar } from "./calendar";
+export { default as Profile } from "./profile";

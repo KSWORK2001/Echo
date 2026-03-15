@@ -8,7 +8,12 @@ import {
 import { Message, TYPE_PROVIDER } from "@/types";
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import curl2Json from "@bany/curl-to-json";
-import { getResponseSettings, RESPONSE_LENGTHS, LANGUAGES } from "@/lib";
+import {
+  getProfileContext,
+  getResponseSettings,
+  RESPONSE_LENGTHS,
+  LANGUAGES,
+} from "@/lib";
 import {
   SPEAKABLE_RESPONSE_INSTRUCTIONS,
 } from "@/config/constants";
@@ -21,6 +26,11 @@ function buildEnhancedSystemPrompt(baseSystemPrompt?: string): string {
 
   if (baseSystemPrompt) {
     prompts.push(baseSystemPrompt);
+  }
+
+  const profileContext = getProfileContext();
+  if (profileContext) {
+    prompts.push(profileContext);
   }
 
   const lengthOption = RESPONSE_LENGTHS.find(

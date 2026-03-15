@@ -4,6 +4,7 @@ import {
   CalendarDays,
   MessagesSquare,
   WandSparkles,
+  UserRound,
   SlidersHorizontalIcon,
   SquareSlashIcon,
   BookOpenTextIcon,
@@ -27,6 +28,11 @@ export const useMenuItems = () => {
       icon: WandSparkles,
       label: "Personality",
       href: "/system-prompts",
+    },
+    {
+      icon: UserRound,
+      label: "Profile",
+      href: "/profile",
     },
     {
       icon: Settings,
