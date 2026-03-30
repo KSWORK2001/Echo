@@ -40,11 +40,8 @@ const REASONING_PROVIDER_OPTIONS: {
 const REASONING_MODELS_BY_PROVIDER: Record<ReasoningProviderId, string[]> = {
   [OPENAI_PROVIDER_ID]: [
     "gpt-5.4",
-    "gpt-5.2",
-    "gpt-5.1",
-    "gpt-5",
-    "gpt-5-mini",
-    "gpt-5-nano",
+    "gpt-5.4-mini-2026-03-17",
+    "gpt-5.4-nano-2026-03-17",
   ],
   [CLAUDE_PROVIDER_ID]: [
     "claude-opus-4-6",
@@ -56,7 +53,7 @@ const REASONING_MODELS_BY_PROVIDER: Record<ReasoningProviderId, string[]> = {
 };
 
 const DEFAULT_MODEL_BY_PROVIDER: Record<ReasoningProviderId, string> = {
-  [OPENAI_PROVIDER_ID]: "gpt-5-mini",
+  [OPENAI_PROVIDER_ID]: "gpt-5.4-mini-2026-03-17",
   [CLAUDE_PROVIDER_ID]: "claude-sonnet-4-6",
   [LOCAL_PROVIDER_ID]: "local-transformers-model",
 };

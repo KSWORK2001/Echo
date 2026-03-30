@@ -1,12 +1,13 @@
 import { ChatConversation } from "@/types";
 import { Markdown, Switch, CopyButton } from "@/components";
-import { BotIcon, HeadphonesIcon, Loader2, SparklesIcon } from "lucide-react";
+import { BotIcon, HeadphonesIcon, Loader2, MicIcon, SparklesIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {
   lastTranscription: string;
   lastAIResponse: string;
   isAIProcessing: boolean;
+  isSpeechActive?: boolean;
   conversation: ChatConversation;
   conversationMode: boolean;
   setConversationMode: (mode: boolean) => void;
@@ -16,6 +17,7 @@ export const ResultsSection = ({
   lastTranscription,
   lastAIResponse,
   isAIProcessing,
+  isSpeechActive,
   conversation,
   conversationMode,
   setConversationMode,
@@ -23,7 +25,7 @@ export const ResultsSection = ({
   const hasResponse = lastAIResponse || isAIProcessing;
   const hasHistory = conversation.messages.length > 2;
 
-  if (!hasResponse && !lastTranscription) {
+  if (!hasResponse && !lastTranscription && !isSpeechActive) {
     return null;
   }
 
@@ -57,9 +59,15 @@ export const ResultsSection = ({
       {!conversationMode && (
         <div className="space-y-2">
           {/* System Input - Just text with bold label */}
-          {lastTranscription && (
+          {(lastTranscription || isSpeechActive) && (
             <p className="text-[11px] text-muted-foreground">
               <span className="font-semibold">System:</span> {lastTranscription}
+              {isSpeechActive && (
+                <span className="inline-flex items-center gap-1 ml-1 text-amber-500">
+                  <MicIcon className="w-3 h-3 animate-pulse" />
+                  <span className="text-[10px] animate-pulse">listening...</span>
+                </span>
+              )}
             </p>
           )}
 
@@ -117,7 +125,7 @@ export const ResultsSection = ({
           )}
 
           {/* System Input - Second */}
-          {lastTranscription && (
+          {(lastTranscription || isSpeechActive) && (
             <div className="rounded-md border-l-2 border-primary/50 bg-primary/5 p-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <HeadphonesIcon className="h-3 w-3 text-primary" />
@@ -125,7 +133,15 @@ export const ResultsSection = ({
                   System
                 </span>
               </div>
-              <p className="text-sm">{lastTranscription}</p>
+              <p className="text-sm">
+                {lastTranscription}
+                {isSpeechActive && (
+                  <span className="inline-flex items-center gap-1 ml-1 text-amber-500">
+                    <MicIcon className="w-3 h-3 animate-pulse" />
+                    <span className="text-[10px] animate-pulse">listening...</span>
+                  </span>
+                )}
+              </p>
             </div>
           )}
 

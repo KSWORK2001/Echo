@@ -6,6 +6,7 @@ type Props = {
   isProcessing: boolean;
   isAIProcessing: boolean;
   capturing: boolean;
+  isSpeechActive?: boolean;
 };
 
 export const StatusIndicator = ({
@@ -14,6 +15,7 @@ export const StatusIndicator = ({
   isProcessing,
   isAIProcessing,
   capturing,
+  isSpeechActive,
 }: Props) => {
   // Don't show anything if not capturing and no error
   if (!capturing && !error && !isProcessing && !isAIProcessing) {
@@ -37,6 +39,11 @@ export const StatusIndicator = ({
         <div className="flex items-center gap-2 animate-pulse">
           <LoaderIcon className="w-4 h-4 animate-spin" />
           <span className="text-xs font-medium">Transcribing...</span>
+        </div>
+      ) : capturing && isSpeechActive ? (
+        <div className="flex items-center gap-2 text-amber-500 animate-pulse">
+          <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+          <span className="text-xs font-medium">Hearing speech...</span>
         </div>
       ) : capturing ? (
         <div className="flex items-center gap-2 text-green-600 animate-pulse">

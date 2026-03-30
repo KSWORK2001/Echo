@@ -7,17 +7,15 @@ import {
   ScrollArea,
 } from "@/components";
 import {
-  HeadphonesIcon,
+  PlayIcon,
   AlertCircleIcon,
   LoaderIcon,
-  AudioLinesIcon,
   CameraIcon,
   PlusIcon,
   XIcon,
+  SquareIcon,
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
-import { ModeSwitcher } from "./ModeSwitcher";
-import { RecordingPanel } from "./RecordingPanel";
 import { ResultsSection } from "./ResultsSection";
 import { SettingsPanel } from "./SettingsPanel";
 import { PermissionFlow } from "./PermissionFlow";
@@ -57,12 +55,8 @@ export const SystemAudio = (props: useSystemAudioType) => {
     handleQuickActionClick,
     vadConfig,
     updateVadConfiguration,
-    isRecordingInContinuousMode,
-    recordingProgress,
-    manualStopAndSend,
-    startContinuousRecording,
-    ignoreContinuousRecording,
     scrollAreaRef,
+    isSpeechActive,
   } = props;
 
   const { supportsImages } = useApp();
@@ -74,7 +68,6 @@ export const SystemAudio = (props: useSystemAudioType) => {
   const [screenshotImage, setScreenshotImage] = useState<string | null>(null);
   const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
 
-  const isVadMode = vadConfig.enabled;
   const hasResponse = lastAIResponse || isAIProcessing;
 
   // Keyboard shortcut for Cmd+K to toggle view mode
@@ -106,13 +99,6 @@ export const SystemAudio = (props: useSystemAudioType) => {
     } else {
       await startCapture();
     }
-  };
-
-  const handleModeChange = (vadEnabled: boolean) => {
-    updateVadConfiguration({
-      ...vadConfig,
-      enabled: vadEnabled,
-    });
   };
 
   // Capture screenshot functionality
@@ -160,8 +146,8 @@ export const SystemAudio = (props: useSystemAudioType) => {
       return <AlertCircleIcon className="text-red-500" />;
     if (isProcessing) return <LoaderIcon className="animate-spin" />;
     if (capturing)
-      return <AudioLinesIcon className="text-green-500 animate-pulse" />;
-    return <HeadphonesIcon />;
+      return <SquareIcon className="text-red-500 fill-red-500" size={16} />;
+    return <PlayIcon className="fill-current" size={16} />;
   };
 
   const getButtonTitle = () => {
@@ -204,23 +190,13 @@ export const SystemAudio = (props: useSystemAudioType) => {
           sideOffset={8}
         >
           <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
-            {/* Header - Mode Switcher + Actions */}
+            {/* Header - Actions */}
             <div className="flex-shrink-0 p-3 border-b border-border/50">
               <div className="flex items-center justify-between gap-2">
-                {/* Mode Switcher */}
-                {!setupRequired && (
-                  <ModeSwitcher
-                    isVadMode={isVadMode}
-                    onModeChange={handleModeChange}
-                    disabled={
-                      isRecordingInContinuousMode ||
-                      isProcessing ||
-                      isAIProcessing
-                    }
-                  />
-                )}
-                {setupRequired && (
+                {setupRequired ? (
                   <h2 className="font-semibold text-sm">Setup Required</h2>
+                ) : (
+                  <h2 className="font-semibold text-sm">Echo Listener</h2>
                 )}
 
                 {/* Action Buttons */}
@@ -334,24 +310,12 @@ export const SystemAudio = (props: useSystemAudioType) => {
                   />
                 ) : (
                   <>
-                    {/* Recording Panel */}
-                    <RecordingPanel
-                      isVadMode={isVadMode}
-                      isRecording={isRecordingInContinuousMode}
-                      isProcessing={isProcessing}
-                      isAIProcessing={isAIProcessing}
-                      recordingProgress={recordingProgress}
-                      maxDuration={vadConfig.max_recording_duration_secs}
-                      onStartRecording={startContinuousRecording}
-                      onStopAndSend={manualStopAndSend}
-                      onIgnore={ignoreContinuousRecording}
-                    />
-
                     {/* AI Response */}
                     <ResultsSection
                       lastTranscription={lastTranscription}
                       lastAIResponse={lastAIResponse}
                       isAIProcessing={isAIProcessing}
+                      isSpeechActive={isSpeechActive}
                       conversation={conversation}
                       conversationMode={conversationMode}
                       setConversationMode={setConversationMode}
@@ -368,7 +332,7 @@ export const SystemAudio = (props: useSystemAudioType) => {
                     />
 
                     {/* Help/Keyboard Shortcuts */}
-                    <Warning isVadMode={isVadMode} />
+                    <Warning />
                   </>
                 )}
               </div>

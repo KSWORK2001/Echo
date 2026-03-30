@@ -1,6 +1,7 @@
 import {
   AI_PROVIDERS,
   DEFAULT_SYSTEM_PROMPT,
+  LEGACY_DEFAULT_SYSTEM_PROMPT,
   SPEECH_TO_TEXT_PROVIDERS,
   STORAGE_KEYS,
 } from "@/config";
@@ -71,8 +72,19 @@ const AppContext = createContext<IContextType | undefined>(undefined);
 // Create the provider component
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [systemPrompt, setSystemPrompt] = useState<string>(
-    safeLocalStorage.getItem(STORAGE_KEYS.SYSTEM_PROMPT) ||
-      DEFAULT_SYSTEM_PROMPT
+    (() => {
+      const storedPrompt = safeLocalStorage.getItem(STORAGE_KEYS.SYSTEM_PROMPT);
+      if (!storedPrompt || storedPrompt === LEGACY_DEFAULT_SYSTEM_PROMPT) {
+        if (storedPrompt === LEGACY_DEFAULT_SYSTEM_PROMPT) {
+          safeLocalStorage.setItem(
+            STORAGE_KEYS.SYSTEM_PROMPT,
+            DEFAULT_SYSTEM_PROMPT
+          );
+        }
+        return DEFAULT_SYSTEM_PROMPT;
+      }
+      return storedPrompt;
+    })()
   );
 
   const [selectedAudioDevices, setSelectedAudioDevices] = useState<{
@@ -188,7 +200,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       STORAGE_KEYS.SYSTEM_PROMPT
     );
     if (savedSystemPrompt) {
-      setSystemPrompt(savedSystemPrompt || DEFAULT_SYSTEM_PROMPT);
+      if (savedSystemPrompt === LEGACY_DEFAULT_SYSTEM_PROMPT) {
+        setSystemPrompt(DEFAULT_SYSTEM_PROMPT);
+        safeLocalStorage.setItem(
+          STORAGE_KEYS.SYSTEM_PROMPT,
+          DEFAULT_SYSTEM_PROMPT
+        );
+      } else {
+        setSystemPrompt(savedSystemPrompt || DEFAULT_SYSTEM_PROMPT);
+      }
     }
 
     // Load screenshot configuration

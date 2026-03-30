@@ -18,7 +18,7 @@ import {
   SPEAKABLE_RESPONSE_INSTRUCTIONS,
 } from "@/config/constants";
 
-const FIRST_PERSON_USER_VOICE_INSTRUCTIONS = `Always answer from the user's first-person point of view, as if you are the user speaking. Match the user's thought process, perspective, and intended meaning. Write the actual answer in first person using "I", "me", and "my" when appropriate. Do not describe what the user would say. Say it as the user directly. Apply this consistently for every response, including personality-based replies, screenshot analysis, and general assistance.`;
+const PROFESSIONAL_INTERVIEW_VOICE_INSTRUCTIONS = `Act like a professional interview response coach. Default to producing a smooth, spoken response the user can say aloud in a college-professional tone. Use first-person language only when the user is asking for a direct personal answer, introduction, or interview response to speak as themselves. For factual, analytical, or general questions, do not force the reply to start from I, me, or my. Keep the wording natural, credible, and ready for live conversation.`;
 
 function buildEnhancedSystemPrompt(baseSystemPrompt?: string): string {
   const responseSettings = getResponseSettings();
@@ -47,7 +47,7 @@ function buildEnhancedSystemPrompt(baseSystemPrompt?: string): string {
     prompts.push(languageOption.prompt);
   }
 
-  prompts.push(FIRST_PERSON_USER_VOICE_INSTRUCTIONS);
+  prompts.push(PROFESSIONAL_INTERVIEW_VOICE_INSTRUCTIONS);
   prompts.push(SPEAKABLE_RESPONSE_INSTRUCTIONS);
 
   return prompts.join(" ");
