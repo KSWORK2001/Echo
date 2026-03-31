@@ -56,6 +56,7 @@ const App = () => {
                   isAIProcessing={systemAudio.isAIProcessing}
                   capturing={systemAudio.capturing}
                   isSpeechActive={systemAudio.isSpeechActive}
+                  isMicActive={systemAudio.isMicActive}
                 />
               </div>
             </div>

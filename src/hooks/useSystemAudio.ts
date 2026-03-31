@@ -82,6 +82,7 @@ export function useSystemAudio() {
   const [vadConfig, setVadConfig] = useState<VadConfig>(DEFAULT_VAD_CONFIG);
   const [accumulatedTranscript, setAccumulatedTranscript] = useState<string>("");
   const [isSpeechActive, setIsSpeechActive] = useState<boolean>(false);
+  const [isMicActive, setIsMicActive] = useState<boolean>(false);
 
   const [conversation, setConversation] = useState<ChatConversation>({
     id: "",
@@ -259,24 +260,29 @@ export function useSystemAudio() {
 
             // Grab mic audio blob (collected since last speech segment)
             const micBlob = micChunksRef.current.length > 0
-              ? new Blob(micChunksRef.current, { type: "audio/webm" })
+              ? new Blob(micChunksRef.current, {
+                  type: micRecorderRef.current?.mimeType || "audio/webm",
+                })
               : null;
             micChunksRef.current = [];
 
-            // Transcribe system audio (speaker)
+            // Transcribe system audio (speaker) - this drives the AI response
             const speakerSttPromise = fetchSTT({
               provider: providerConfig,
               selectedProvider: selectedSttProvider,
               audio: audioBlob,
             });
 
-            // Transcribe mic audio (user) in parallel if available
+            // Transcribe mic audio (user) in parallel - display only, not sent to AI
             const micSttPromise = micBlob
               ? fetchSTT({
                   provider: providerConfig,
                   selectedProvider: selectedSttProvider,
                   audio: micBlob,
-                }).catch(() => "")
+                }).catch((err) => {
+                  console.warn("Mic STT failed:", err);
+                  return "";
+                })
               : Promise.resolve("");
 
             const timeoutPromise = new Promise<string>((_, reject) => {
@@ -300,13 +306,13 @@ export function useSystemAudio() {
               const micTrimmed = micText.trim();
 
               if (speakerTrimmed || micTrimmed) {
-                // Build labeled transcript segment
+                // Build labeled transcript segment for display
                 const parts: string[] = [];
-                if (speakerTrimmed) parts.push(`Speaker: ${speakerTrimmed}`);
                 if (micTrimmed) parts.push(`You: ${micTrimmed}`);
+                if (speakerTrimmed) parts.push(`Speaker: ${speakerTrimmed}`);
                 const segment = parts.join("\n");
 
-                // Append to accumulated transcript
+                // Append to accumulated transcript (shown in UI)
                 const prev = accumulatedTranscriptRef.current;
                 const updated = prev
                   ? prev + "\n" + segment
@@ -316,19 +322,22 @@ export function useSystemAudio() {
                 setLastTranscription(updated);
                 setError("");
 
-                const effectiveSystemPrompt = useSystemPrompt
-                  ? systemPrompt || DEFAULT_SYSTEM_PROMPT
-                  : contextContent || DEFAULT_SYSTEM_PROMPT;
+                // Only send speaker transcription to AI (not mic)
+                if (speakerTrimmed) {
+                  const effectiveSystemPrompt = useSystemPrompt
+                    ? systemPrompt || DEFAULT_SYSTEM_PROMPT
+                    : contextContent || DEFAULT_SYSTEM_PROMPT;
 
-                const previousMessages = conversation.messages.map((msg) => {
-                  return { role: msg.role, content: msg.content };
-                });
+                  const previousMessages = conversation.messages.map((msg) => {
+                    return { role: msg.role, content: msg.content };
+                  });
 
-                await processWithAI(
-                  updated,
-                  effectiveSystemPrompt,
-                  previousMessages
-                );
+                  await processWithAI(
+                    speakerTrimmed,
+                    effectiveSystemPrompt,
+                    previousMessages
+                  );
+                }
               } else {
                 setError("Received empty transcription");
               }
@@ -478,6 +487,7 @@ export function useSystemAudio() {
       micStreamRef.current = null;
     }
     micRecorderRef.current = null;
+    setIsMicActive(false);
   }, []);
 
   // Helper: start mic recording
@@ -487,7 +497,17 @@ export function useSystemAudio() {
       micStreamRef.current = stream;
       micChunksRef.current = [];
 
-      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      // Pick a supported mimeType with fallback
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : undefined; // browser default
+
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
           micChunksRef.current.push(e.data);
@@ -495,6 +515,8 @@ export function useSystemAudio() {
       };
       recorder.start(1000); // collect chunks every second
       micRecorderRef.current = recorder;
+      setIsMicActive(true);
+      console.log("Mic recording started, mimeType:", recorder.mimeType);
     } catch (err) {
       console.warn("Mic access denied or unavailable:", err);
       // Non-fatal: system audio still works without mic
@@ -859,6 +881,7 @@ export function useSystemAudio() {
     lastAIResponse,
     accumulatedTranscript,
     isSpeechActive,
+    isMicActive,
     error,
     setupRequired,
     startCapture,

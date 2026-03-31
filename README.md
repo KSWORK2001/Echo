@@ -1,195 +1,125 @@
-# Echo
+<a id="readme-top"></a>
 
-<p align="center">
+<div align="center">
   <img src="images/Echo.png" alt="Echo banner" width="720" />
-</p>
 
-<p align="center">
-  <strong>An on-screen AI copilot for meetings, interviews, demos, and live work.</strong>
-</p>
+  <h1>Echo</h1>
 
-<p align="center">
-  Built for people who need help <em>during</em> the conversation, not after it.
-</p>
+  <p>
+    <strong>An on-screen AI copilot for meetings, interviews, demos, and live work.</strong>
+  </p>
 
----
+  <p>
+    Lightweight, local-first where possible, and built to help <em>during</em> the conversation instead of after it.
+  </p>
 
-## What Echo actually is
-
-Echo is a lightweight desktop assistant that stays available while you work.
-
-It can:
-
-- listen to **system audio**
-- listen to **your microphone** at the same time
-- build a better understanding of the full conversation
-- show you live transcript context
-- generate fast responses without forcing you to switch windows
-- attach screenshots and files when extra context matters
-
-The goal is simple: **help you think and respond in real time without getting in your way**.
+  <p>
+    <a href="#getting-started"><strong>Get Started</strong></a>
+    ·
+    <a href="#usage">Usage</a>
+    ·
+    <a href="#contributing">Contributing</a>
+    ·
+    <a href="#contact">Contact</a>
+  </p>
+</div>
 
 ---
 
-## Why it feels different
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li><a href="#about-the-project">About The Project</a></li>
+    <li><a href="#why-echo">Why Echo</a></li>
+    <li><a href="#built-with">Built With</a></li>
+    <li><a href="#getting-started">Getting Started</a></li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ol>
+</details>
 
-Most AI desktop tools feel like chat apps with a microphone glued on top.
+## About The Project
 
-Echo is designed more like a **silent overlay system**:
+Echo is a desktop AI assistant built for live situations where context changes fast and switching windows kills momentum.
 
-- **Always near, never loud**
-- **Fast to open, fast to dismiss**
-- **Useful during pressure moments**
-- **Private by default**
-- **Flexible enough to work with your own providers**
+Instead of behaving like a normal chat app, Echo acts like a **quiet overlay companion** that can listen, watch, and help while you keep moving.
 
-It is especially useful when you are:
+It is designed for moments like:
 
-- in a live interview
-- on a customer call
-- presenting or demoing
-- handling support or troubleshooting
-- trying to think clearly while multiple inputs are coming at once
+- live interviews
+- customer calls
+- demos and presentations
+- support and troubleshooting sessions
+- high-context work where multiple inputs are happening at once
 
----
+What Echo can do right now:
 
-## Current experience
+- capture **system audio**
+- capture **microphone input** at the same time
+- transcribe both sides of the conversation
+- label transcript roles so the AI follows the exchange more accurately
+- interrupt an in-progress response when new speech starts
+- include screenshots and files as extra context
+- work with multiple LLM and STT providers
 
-### Conversation capture
+The core idea is simple: **help you think and respond in real time without becoming another thing you have to manage**.
 
-Echo now uses a **single conversation mode**.
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-When you start it:
+## Why Echo
 
-- system/speaker audio is captured
-- your microphone is captured too
-- both sides of the conversation are sent through speech-to-text
-- the transcript is labeled so the AI can distinguish between the other side and you
+Most AI desktop tools feel like generic chat interfaces with a microphone bolted on.
 
-This makes the assistant much better at following back-and-forth discussion instead of reacting to only one side.
+Echo is intentionally different.
 
-### Real-time interruption handling
+- **Built for pressure**
+  It is meant to be useful when you need fast thinking in a live conversation.
 
-If the AI starts responding and new speech begins, Echo can interrupt the in-flight response and continue listening so the conversation stays current.
+- **Conversation-aware**
+  It now runs in a single conversation mode that captures both speaker audio and your microphone for better context.
 
-### Live context
+- **Interrupt-aware**
+  If someone starts talking again, Echo can stop generating and resume listening.
 
-Echo can surface:
+- **Provider-flexible**
+  You are not locked into one AI backend.
 
-- transcript progress
-- speech activity status
-- response generation state
-- screenshots and file attachments for extra context
+- **Local-first mindset**
+  Settings, chat history, and configuration stay close to the machine and your chosen providers.
 
----
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## Highlights
+## Built With
 
-### Lightweight desktop architecture
+- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, Radix UI
+- **Desktop:** Tauri 2.x, Rust
+- **Storage:** SQLite
+- **Speech / AI:** provider-based STT and LLM integrations with custom curl-based support
 
-- Tauri 2.x + Rust backend
-- React 19 + TypeScript frontend
-- Vite development workflow
-- native desktop performance without shipping a full Electron-style browser stack
+Current OpenAI reasoning model options in the app:
 
-### Real-time audio intelligence
+- `gpt-5.4`
+- `gpt-5.4-mini-2026-03-17`
+- `gpt-5.4-nano-2026-03-17`
 
-- simultaneous microphone + system audio capture
-- voice activity detection for speaker-side flow
-- live transcript accumulation
-- interruption-aware response handling
-- configurable audio device selection
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-### Flexible AI + STT providers
-
-- OpenAI, Anthropic, local, and custom curl-based providers
-- streaming and non-streaming model support
-- pluggable speech-to-text setup
-- current OpenAI reasoning model options:
-  - `gpt-5.4`
-  - `gpt-5.4-mini-2026-03-17`
-  - `gpt-5.4-nano-2026-03-17`
-
-### Useful in live workflows
-
-- screenshot capture for visual context
-- file attachments
-- saved conversations
-- quick actions
-- custom prompts and reusable context
-
-### Local-first behavior
-
-- local settings + persisted chat history
-- direct provider connections
-- no mandatory proxy layer
-- user-controlled credentials
-
----
-
-## Tech stack
-
-### Frontend
-
-- React 19
-- TypeScript
-- Vite
-- Tailwind CSS
-- Radix UI
-
-### Desktop / native
-
-- Tauri 2.x
-- Rust
-- SQLite
-
-### AI / speech
-
-- provider-based LLM integration
-- provider-based STT integration
-- curl-driven custom providers
-- streaming response support
-
----
-
-## What Echo is good for
-
-### Interviews
-
-- recover quickly when a question is phrased awkwardly
-- keep track of technical context while speaking
-- use screenshots/files when the discussion turns visual
-
-### Sales and demos
-
-- pull in product context during calls
-- answer objections faster
-- stay anchored to what was just said
-
-### Support and operations
-
-- follow technical back-and-forth accurately
-- attach screenshots for incident/debugging context
-- avoid losing the thread during long troubleshooting sessions
-
-### General knowledge work
-
-- use Echo as a fast sidecar while reading, presenting, coding, or planning
-
----
-
-## Quick start
+## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+
 - Rust stable
-- platform prerequisites for Tauri:
+- Tauri platform prerequisites
   - [Linux prerequisites](https://v2.tauri.app/start/prerequisites/)
   - [macOS prerequisites](https://v2.tauri.app/start/prerequisites/)
   - [Windows prerequisites](https://v2.tauri.app/start/prerequisites/)
 
-### Install
+### Installation
 
 ```bash
 git clone https://github.com/your-username/echo.git
@@ -197,75 +127,128 @@ cd echo
 npm install
 ```
 
-### Run in development
+### Run locally
 
 ```bash
 npm run tauri dev
 ```
 
-### Build
+### Production build
 
 ```bash
 npm run build
 npm run tauri build
 ```
 
----
+### Provider setup
 
-## Project shape
+To use Echo fully, configure:
+
+- an AI provider
+- a speech-to-text provider
+- any relevant API keys in the app settings
+
+Echo supports both built-in providers and custom curl-based providers.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## Usage
+
+### Conversation mode
+
+Echo now uses a **single conversation mode**.
+
+When you start capture:
+
+- speaker/system audio is recorded
+- your microphone is recorded too
+- both transcripts are combined for better conversational context
+- the AI can distinguish between the other speaker and you
+
+This improves follow-up quality, continuity, and general awareness during back-and-forth discussion.
+
+### Live response behavior
+
+Echo can:
+
+- show transcript progress
+- indicate when speech is actively being detected
+- indicate when the AI is processing
+- stop an in-flight answer if new speech starts
+
+### Extra context inputs
+
+You can also use:
+
+- screenshots
+- file attachments
+- saved chat history
+- custom prompts and reusable context
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## Architecture
 
 ```text
-src/                 React UI, hooks, providers, app flows
-src-tauri/           Rust backend, native commands, platform audio handling
+src/                 React UI, hooks, provider flows, app logic
+src-tauri/           Rust backend, native commands, system audio handling
 images/              README/media assets
-public/              static runtime assets used by the app
+public/              runtime static assets
 ```
 
----
+### Technical highlights
 
-## Design principles
+- Tauri-based desktop shell with Rust-native integrations
+- React UI with streaming response workflows
+- simultaneous mic + system audio capture for conversation context
+- provider abstraction for AI and STT backends
+- local settings and persisted chat history
 
-- **Speed over ceremony**
-- **Useful during live pressure**
-- **Local-first where possible**
-- **Provider-agnostic by design**
-- **Minimal UI, high leverage**
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
----
+## Roadmap
 
-## Roadmap direction
+- [ ] stronger conversation memory and context linking
+- [ ] better speaker separation and conversation understanding
+- [ ] richer local knowledge and profile integration
+- [ ] more polished live coaching and response workflows
+- [ ] broader platform hardening and deployment improvements
 
-- stronger conversation memory and context linking
-- better speaker separation and conversation understanding
-- richer local knowledge / profile integration
-- more polished live coaching and response workflows
-- broader platform hardening and deployment improvements
-
----
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Contributing
 
-If you want to improve the app, open an issue or submit a PR.
+Contributions are welcome.
 
-Good contributions include:
+Useful areas to contribute to include:
 
 - platform-specific audio reliability fixes
 - provider integrations
-- UI polish
-- onboarding improvements
 - transcript quality improvements
+- UI polish
+- onboarding and setup improvements
 
----
+If you want to contribute:
+
+1. Fork the project
+2. Create your feature branch
+3. Commit your changes
+4. Push the branch
+5. Open a pull request
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## License
 
-GPL-3.0. See [LICENSE](LICENSE).
+Distributed under the GPL-3.0 license. See [LICENSE](LICENSE) for more information.
 
----
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<div align="center">
-**Built with ❤️ using Tauri, React, and Rust**
+## Contact
 
-*The future of AI-assisted meetings is here*
+Karan Shrivastava
 
-</div>
+- Portfolio: <a href="https://kswork2001.github.io/portfolio">kswork2001.github.io/portfolio</a>
+- Email: <a href="mailto:work.karan2001@gmail.com">work.karan2001@gmail.com</a>
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
