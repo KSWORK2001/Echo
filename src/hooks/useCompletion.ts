@@ -5,6 +5,7 @@ import { MAX_FILES } from "@/config";
 import { useApp } from "@/contexts";
 import {
   fetchAIResponse,
+  sanitizeSpokenScript,
   saveConversation,
   getConversationById,
   generateConversationTitle,
@@ -348,6 +349,14 @@ export const useCompletion = () => {
           return;
         }
 
+        const cleanedResponse = sanitizeSpokenScript(fullResponse);
+        if (cleanedResponse !== fullResponse) {
+          setState((prev) => ({
+            ...prev,
+            response: cleanedResponse,
+          }));
+        }
+
         setState((prev) => ({ ...prev, isLoading: false }));
 
         // Focus input after AI response is complete
@@ -356,10 +365,10 @@ export const useCompletion = () => {
         }, 100);
 
         // Save the conversation after successful completion
-        if (fullResponse.trim()) {
+        if (cleanedResponse.trim()) {
           await saveCurrentConversation(
             input,
-            fullResponse,
+            cleanedResponse,
             attachedFiles
           );
           // Clear input and attached files after saving

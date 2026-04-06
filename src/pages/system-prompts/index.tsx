@@ -11,6 +11,12 @@ import {
   Button,
   Empty,
 } from "@/components";
+import {
+  getPersonalityAssets,
+  removePersonalityAssets,
+  setPersonalityAssets,
+  PersonalityAsset,
+} from "@/lib";
 import { useSystemPrompts } from "@/hooks";
 import {
   Search,
@@ -191,16 +197,18 @@ const SystemPrompts = () => {
     id?: number;
     name: string;
     prompt: string;
+    assets: PersonalityAsset[];
   }>({
     name: "",
     prompt: "",
+    assets: [],
   });
 
   /**
    * Handle opening create dialog
    */
   const handleCreateClick = () => {
-    setForm({ name: "", prompt: "" });
+    setForm({ name: "", prompt: "", assets: [] });
     setIsCreateEditDialogOpen(true);
   };
 
@@ -214,6 +222,7 @@ const SystemPrompts = () => {
         id: promptToEdit.id,
         name: promptToEdit.name,
         prompt: promptToEdit.prompt,
+        assets: getPersonalityAssets(promptToEdit.id),
       });
       setIsCreateEditDialogOpen(true);
     }
@@ -229,6 +238,7 @@ const SystemPrompts = () => {
         id: promptToDelete.id,
         name: promptToDelete.name,
         prompt: promptToDelete.prompt,
+        assets: getPersonalityAssets(promptToDelete.id),
       });
       setIsDeleteDialogOpen(true);
     }
@@ -244,21 +254,23 @@ const SystemPrompts = () => {
 
       if (form.id) {
         // Update existing prompt
-        await updatePrompt(form.id, {
+        const updated = await updatePrompt(form.id, {
           name: form.name,
           prompt: form.prompt,
         });
+        setPersonalityAssets(updated.id, form.assets);
       } else {
         // Create new prompt
         const newPrompt = await createPrompt({
           name: form.name,
           prompt: form.prompt,
         });
+        setPersonalityAssets(newPrompt.id, form.assets);
         // Auto-select the newly created prompt
         handleSelectPrompt(newPrompt.id);
       }
 
-      setForm({ name: "", prompt: "" });
+      setForm({ name: "", prompt: "", assets: [] });
       setIsCreateEditDialogOpen(false);
     } catch (err) {
       console.error("Failed to save prompt:", err);
@@ -272,7 +284,8 @@ const SystemPrompts = () => {
    */
   const handleDeleteConfirm = async (id: number) => {
     await deletePrompt(id);
-    setForm({ name: "", prompt: "" });
+    removePersonalityAssets(id);
+    setForm({ name: "", prompt: "", assets: [] });
     setIsDeleteDialogOpen(false);
   };
 
@@ -294,6 +307,7 @@ const SystemPrompts = () => {
     setForm({
       name: template.name,
       prompt: template.prompt,
+      assets: [],
     });
     setIsCreateEditDialogOpen(true);
   };

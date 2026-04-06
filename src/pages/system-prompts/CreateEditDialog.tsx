@@ -1,3 +1,4 @@
+import { ChangeEvent, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +11,43 @@ import {
   Textarea,
 } from "@/components";
 import { GenerateSystemPrompt } from "./Generate";
-import { SparklesIcon } from "lucide-react";
+import { PaperclipIcon, SparklesIcon, Trash2Icon, FileIcon, ImageIcon } from "lucide-react";
+import { PersonalityAsset } from "@/lib";
+
+const ALLOWED_ATTACHMENT_MIME_TYPES = new Set([
+  "application/pdf",
+  "text/plain",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]);
+
+const ALLOWED_ATTACHMENT_EXTENSIONS = new Set(["pdf", "txt", "doc", "docx"]);
+
+const isAllowedAttachmentFile = (file: File): boolean => {
+  if (file.type.startsWith("image/")) {
+    return true;
+  }
+
+  if (file.type && ALLOWED_ATTACHMENT_MIME_TYPES.has(file.type)) {
+    return true;
+  }
+
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  return extension ? ALLOWED_ATTACHMENT_EXTENSIONS.has(extension) : false;
+};
+
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64 = result.split(",")[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
 
 interface CreateEditDialogProps {
   isOpen: boolean;
@@ -19,15 +56,17 @@ interface CreateEditDialogProps {
     id?: number;
     name: string;
     prompt: string;
+    assets: PersonalityAsset[];
   };
   setForm: React.Dispatch<
     React.SetStateAction<{
       id?: number;
       name: string;
       prompt: string;
+      assets: PersonalityAsset[];
     }>
   >;
-  onSave: () => void;
+  onSave: () => void | Promise<void>;
   onGenerate: (prompt: string, promptName: string) => void;
   isEditing?: boolean;
   isSaving?: boolean;
@@ -43,10 +82,40 @@ export const CreateEditDialog = ({
   isEditing = false,
   isSaving = false,
 }: CreateEditDialogProps) => {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isFormValid = form.name.trim() && form.prompt.trim();
 
-  const handleSave = () => {
-    onSave();
+  const handleSave = async () => {
+    await onSave();
+  };
+
+  const handleAssetSelect = async (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validFiles = files.filter(isAllowedAttachmentFile);
+
+    const processed = await Promise.all(
+      validFiles.map(async (file) => ({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name: file.name,
+        type: file.type || "application/octet-stream",
+        base64: await fileToBase64(file),
+        size: file.size,
+      }))
+    );
+
+    setForm((prev) => ({
+      ...prev,
+      assets: [...prev.assets, ...processed],
+    }));
+
+    e.target.value = "";
+  };
+
+  const removeAsset = (assetId: string) => {
+    setForm((prev) => ({
+      ...prev,
+      assets: prev.assets.filter((asset) => asset.id !== assetId),
+    }));
   };
 
   return (
@@ -95,6 +164,70 @@ export const CreateEditDialog = ({
               💡 Tip: Be specific about tone, expertise level, and response
               format
             </p>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium leading-none">
+                Personality Files & Images
+              </label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <PaperclipIcon className="h-4 w-4 mr-2" />
+                Attach
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              These files are sent as persistent context whenever this personality is active.
+            </p>
+
+            {form.assets.length > 0 ? (
+              <div className="max-h-40 overflow-auto space-y-2 rounded-md border p-2">
+                {form.assets.map((asset) => (
+                  <div
+                    key={asset.id}
+                    className="flex items-center justify-between rounded-md border px-2 py-1.5"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      {asset.type.startsWith("image/") ? (
+                        <ImageIcon className="h-4 w-4 shrink-0" />
+                      ) : (
+                        <FileIcon className="h-4 w-4 shrink-0" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium truncate">{asset.name}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {(asset.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => removeAsset(asset.id)}
+                      title="Remove"
+                    >
+                      <Trash2Icon className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,.pdf,.doc,.docx,.txt,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              className="hidden"
+              onChange={handleAssetSelect}
+            />
           </div>
         </div>
         <DialogFooter className="px-6 pb-6 shrink-0">

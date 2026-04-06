@@ -24,7 +24,13 @@ import { invoke } from "@tauri-apps/api/core";
 type AppTheme = "dark" | "light" | "system";
 
 const Settings = () => {
-  const { customizable, toggleAppIconVisibility, toggleAlwaysOnTop, toggleAutostart } = useApp();
+  const {
+    customizable,
+    toggleAppIconVisibility,
+    toggleAlwaysOnTop,
+    toggleAutostart,
+    toggleDetectabilityMode,
+  } = useApp();
   const { theme, setTheme, transparency, onSetTransparency } = useTheme();
 
   const [floatingWidth, setFloatingWidth] = useState(() => {
@@ -206,6 +212,37 @@ const Settings = () => {
                   checked={customizable.appIcon.isVisible}
                   onCheckedChange={(checked) => void toggleAppIconVisibility(checked)}
                 />
+              </div>
+
+              <div className="grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1fr)_220px] md:items-center">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Monitor className="h-4 w-4 text-primary" />
+                    Screen Share Detectability
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Undetectable mode applies OS content protection to block casual screen capture. Detectable mode turns that off.
+                  </p>
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                    Warning: no software mode can guarantee invisibility against every capture method.
+                  </p>
+                </div>
+                <Select
+                  value={customizable.detectability.mode}
+                  onValueChange={(value) =>
+                    void toggleDetectabilityMode(
+                      value as "undetectable" | "detectable"
+                    )
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select detectability mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="undetectable">Undetectable</SelectItem>
+                    <SelectItem value="detectable">Detectable</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex items-center justify-between gap-4 px-5 py-4">

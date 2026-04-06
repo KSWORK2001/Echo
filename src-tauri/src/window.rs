@@ -1,5 +1,7 @@
 #[cfg(target_os = "macos")]
 use tauri::LogicalPosition;
+#[cfg(target_os = "windows")]
+use std::process::Command;
 use tauri::{App, AppHandle, Manager, Runtime, WebviewWindow, WebviewWindowBuilder};
 
 // The offset from the top of the screen to the window
@@ -164,6 +166,69 @@ pub fn move_window(app: tauri::AppHandle, direction: String, step: i32) -> Resul
     }
 
     Ok(())
+}
+
+#[tauri::command]
+pub fn set_detectability_mode(app: tauri::AppHandle, mode: String) -> Result<(), String> {
+    let content_protected = match mode.as_str() {
+        "undetectable" => true,
+        "detectable" => false,
+        _ => return Err(format!("Invalid detectability mode: {}", mode)),
+    };
+
+    for (_label, window) in app.webview_windows() {
+        window
+            .set_content_protected(content_protected)
+            .map_err(|e| format!("Failed to update detectability mode: {}", e))?;
+    }
+
+    Ok(())
+}
+
+#[cfg(target_os = "windows")]
+fn classify_meeting_platform(text: &str) -> Option<String> {
+    let normalized = text.to_lowercase();
+
+    if normalized.contains("teams") || normalized.contains("ms-teams") {
+        return Some("Teams".to_string());
+    }
+    if normalized.contains("zoom") {
+        return Some("Zoom".to_string());
+    }
+    if normalized.contains("discord") {
+        return Some("Discord".to_string());
+    }
+    if normalized.contains("webex") {
+        return Some("Webex".to_string());
+    }
+    if normalized.contains("meet.google.com") || normalized.contains("google meet") {
+        return Some("Google Meet".to_string());
+    }
+
+    None
+}
+
+#[tauri::command]
+pub fn detect_meeting_platform() -> Option<String> {
+    #[cfg(target_os = "windows")]
+    {
+        let output = Command::new("powershell")
+            .args([
+                "-NoProfile",
+                "-Command",
+                "Get-Process | Where-Object {$_.MainWindowTitle -and $_.MainWindowTitle.Trim().Length -gt 0} | Select-Object -ExpandProperty MainWindowTitle",
+            ])
+            .output()
+            .ok()?;
+
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        return classify_meeting_platform(&stdout);
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        None
+    }
 }
 
 pub fn create_dashboard_window<R: Runtime>(

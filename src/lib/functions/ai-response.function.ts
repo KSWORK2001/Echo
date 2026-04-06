@@ -10,6 +10,7 @@ import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import curl2Json from "@bany/curl-to-json";
 import {
   getProfileContext,
+  getSelectedPersonalityContextBundle,
   getResponseSettings,
   RESPONSE_LENGTHS,
   LANGUAGES,
@@ -19,6 +20,40 @@ import {
 } from "@/config/constants";
 
 const PROFESSIONAL_INTERVIEW_VOICE_INSTRUCTIONS = `Act like a professional interview response coach. Default to producing a smooth, spoken response the user can say aloud in a college-professional tone. Use first-person language only when the user is asking for a direct personal answer, introduction, or interview response to speak as themselves. For factual, analytical, or general questions, do not force the reply to start from I, me, or my. Keep the wording natural, credible, and ready for live conversation.`;
+
+const SUGGESTION_PREFIX_PATTERNS: RegExp[] = [
+  /^if you want,?\s+i can\b/i,
+  /^let me know if\b/i,
+  /^next steps?\b/i,
+  /^next,?\b/i,
+  /^if you'd like\b/i,
+  /^i can also\b/i,
+];
+
+export const sanitizeSpokenScript = (text: string): string => {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return "";
+  }
+
+  const segments = normalized
+    .split(/(?<=[.!?])\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  while (segments.length > 0) {
+    const last = segments[segments.length - 1];
+    const shouldStrip = SUGGESTION_PREFIX_PATTERNS.some((pattern) =>
+      pattern.test(last)
+    );
+    if (!shouldStrip) {
+      break;
+    }
+    segments.pop();
+  }
+
+  return segments.join(" ").trim() || normalized;
+};
 
 function buildEnhancedSystemPrompt(baseSystemPrompt?: string): string {
   const responseSettings = getResponseSettings();
@@ -31,6 +66,11 @@ function buildEnhancedSystemPrompt(baseSystemPrompt?: string): string {
   const profileContext = getProfileContext();
   if (profileContext) {
     prompts.push(profileContext);
+  }
+
+  const personalityContext = getSelectedPersonalityContextBundle().textContext;
+  if (personalityContext) {
+    prompts.push(personalityContext);
   }
 
   const lengthOption = RESPONSE_LENGTHS.find(
@@ -87,6 +127,12 @@ export async function* fetchAIResponse(params: {
       ? buildEnhancedSystemPrompt(systemPrompt)
       : systemPrompt || "";
 
+    const personalityBundle = getSelectedPersonalityContextBundle();
+    const providerSupportsImages = provider?.curl?.includes("{{IMAGE}}") || false;
+    const finalImagesBase64 = providerSupportsImages
+      ? [...personalityBundle.imagesBase64, ...imagesBase64]
+      : imagesBase64;
+
     if (!provider) {
       throw new Error(`Provider not provided`);
     }
@@ -123,7 +169,7 @@ export async function* fetchAIResponse(params: {
     if (!userMessage) {
       throw new Error("User message is required");
     }
-    if (imagesBase64.length > 0 && !provider.curl.includes("{{IMAGE}}")) {
+    if (finalImagesBase64.length > 0 && !provider.curl.includes("{{IMAGE}}")) {
       throw new Error(
         `Provider ${provider?.id ?? "unknown"} does not support image input`
       );
@@ -141,7 +187,7 @@ export async function* fetchAIResponse(params: {
         bodyObj[messagesKey],
         history,
         userMessage,
-        imagesBase64
+        finalImagesBase64
       );
       bodyObj[messagesKey] = finalMessages;
     }
@@ -222,7 +268,7 @@ export async function* fetchAIResponse(params: {
       }
       const content =
         getByPath(json, provider?.responseContentPath || "") || "";
-      yield content;
+      yield sanitizeSpokenScript(content);
       return;
     }
 

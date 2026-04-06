@@ -16,7 +16,9 @@ import {
   CustomizableState,
   DEFAULT_CUSTOMIZABLE_STATE,
   CursorType,
+  DetectabilityMode,
   updateCursorType,
+  updateDetectabilityMode,
 } from "@/lib/storage";
 import { IContextType, ScreenshotConfig, TYPE_PROVIDER } from "@/types";
 import curl2Json from "@bany/curl-to-json";
@@ -267,6 +269,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const normalizedCustomizableState = {
       ...customizableState,
       alwaysOnTop: { isEnabled: true },
+      detectability:
+        customizableState.detectability ||
+        DEFAULT_CUSTOMIZABLE_STATE.detectability,
     };
     setCustomizable(normalizedCustomizableState);
 
@@ -353,6 +358,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           }),
           invoke("set_always_on_top", {
             enabled: customizable.alwaysOnTop.isEnabled,
+          }),
+          invoke("set_detectability_mode", {
+            mode: customizable.detectability.mode,
           }),
         ]);
       } catch (error) {
@@ -578,6 +586,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const toggleDetectabilityMode = async (mode: DetectabilityMode) => {
+    const newState = updateDetectabilityMode(mode);
+    setCustomizable(newState);
+    try {
+      await invoke("set_detectability_mode", { mode });
+      loadData();
+    } catch (error) {
+      console.error("Failed to toggle detectability mode:", error);
+    }
+  };
+
   const setCursorType = (type: CursorType) => {
     setCustomizable((prev) => ({ ...prev, cursor: { type } }));
     updateCursor(type);
@@ -622,6 +641,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     toggleAppIconVisibility,
     toggleAlwaysOnTop,
     toggleAutostart,
+    toggleDetectabilityMode,
     loadData,
     echoApiEnabled,
     setEchoApiEnabled,

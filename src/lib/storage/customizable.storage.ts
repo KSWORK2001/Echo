@@ -1,6 +1,7 @@
 import { STORAGE_KEYS } from "@/config";
 
 export type CursorType = "invisible" | "default" | "auto";
+export type DetectabilityMode = "undetectable" | "detectable";
 
 export interface CustomizableState {
   appIcon: {
@@ -15,6 +16,9 @@ export interface CustomizableState {
   cursor: {
     type: CursorType;
   };
+  detectability: {
+    mode: DetectabilityMode;
+  };
 }
 
 export const DEFAULT_CUSTOMIZABLE_STATE: CustomizableState = {
@@ -22,6 +26,7 @@ export const DEFAULT_CUSTOMIZABLE_STATE: CustomizableState = {
   alwaysOnTop: { isEnabled: true },
   autostart: { isEnabled: true },
   cursor: { type: "invisible" },
+  detectability: { mode: "undetectable" },
 };
 
 /**
@@ -42,6 +47,8 @@ export const getCustomizableState = (): CustomizableState => {
         parsedState.alwaysOnTop || DEFAULT_CUSTOMIZABLE_STATE.alwaysOnTop,
       autostart: parsedState.autostart || DEFAULT_CUSTOMIZABLE_STATE.autostart,
       cursor: parsedState.cursor || DEFAULT_CUSTOMIZABLE_STATE.cursor,
+      detectability:
+        parsedState.detectability || DEFAULT_CUSTOMIZABLE_STATE.detectability,
     };
   } catch (error) {
     console.error("Failed to get customizable state:", error);
@@ -98,6 +105,18 @@ export const updateCursorType = (type: CursorType): CustomizableState => {
 export const updateAutostart = (isEnabled: boolean): CustomizableState => {
   const currentState = getCustomizableState();
   const newState = { ...currentState, autostart: { isEnabled } };
+  setCustomizableState(newState);
+  return newState;
+};
+
+/**
+ * Update detectability mode
+ */
+export const updateDetectabilityMode = (
+  mode: DetectabilityMode
+): CustomizableState => {
+  const currentState = getCustomizableState();
+  const newState = { ...currentState, detectability: { mode } };
   setCustomizableState(newState);
   return newState;
 };

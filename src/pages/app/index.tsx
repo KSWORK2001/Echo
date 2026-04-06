@@ -1,4 +1,5 @@
 import { Card, DragButton, CustomCursor, Button } from "@/components";
+import { useMemo } from "react";
 import {
   SystemAudio,
   Completion,
@@ -10,13 +11,29 @@ import { useApp as useAppContext } from "@/contexts";
 import { invoke } from "@tauri-apps/api/core";
 import { ErrorBoundary } from "react-error-boundary";
 import { ErrorLayout } from "@/layouts";
-import { getPlatform } from "@/lib";
+import { formatShortcutKeyForDisplay, getPlatform, getShortcutsConfig } from "@/lib";
+import { DEFAULT_SHORTCUT_ACTIONS } from "@/config";
 import echoLogo from "../../../images/echo.ico";
 
 const App = () => {
   const { isHidden, systemAudio } = useApp();
   const { customizable } = useAppContext();
   const platform = getPlatform();
+
+  const keybindTooltip = useMemo(() => {
+    const config = getShortcutsConfig();
+
+    const lines = DEFAULT_SHORTCUT_ACTIONS.map((action) => {
+      const binding = config.bindings[action.id];
+      const displayKey = binding?.key
+        ? formatShortcutKeyForDisplay(binding.key)
+        : "Not set";
+      const status = binding?.enabled === false ? " (Disabled)" : "";
+      return `${action.name}: ${displayKey}${status}`;
+    });
+
+    return ["Open Dashboard", "", "Keybinds:", ...lines].join("\n");
+  }, []);
 
   const openDashboard = async () => {
     try {
@@ -73,7 +90,7 @@ const App = () => {
             <Button
               size={"icon"}
               className="cursor-pointer bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-800 dark:hover:bg-zinc-700"
-              title="Open Dashboard"
+              title={keybindTooltip}
               onClick={openDashboard}
             >
               <img

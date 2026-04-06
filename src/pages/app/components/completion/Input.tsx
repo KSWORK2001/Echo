@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useState } from "react";
 import { Loader2, XIcon } from "lucide-react";
 import {
   Popover,
@@ -13,17 +12,7 @@ import {
 } from "@/components";
 import { UseCompletionReturn } from "@/types";
 import { MessageHistory } from "./MessageHistory";
-import { invoke } from "@tauri-apps/api/core";
-import { useApp } from "@/contexts";
 
-interface AvailableModel {
-  model?: string;
-  id?: string;
-  name?: string;
-  isAvailable?: boolean;
-}
-
-const FALLBACK_MODELS = ["gpt-5.4", "gpt-5.2", "gpt-5.1", "gpt-5", "gpt-5-mini", "gpt-5-nano"];
 
 export const Input = ({
   isPopoverOpen,
@@ -47,72 +36,7 @@ export const Input = ({
   keepEngaged,
   setKeepEngaged,
 }: UseCompletionReturn & { isHidden: boolean }) => {
-  const { selectedAIProvider } = useApp();
-  const [availableModels, setAvailableModels] = useState<string[]>([]);
-  const selectedModel = selectedAIProvider.variables?.model?.trim() || "";
-
-  useEffect(() => {
-    let mounted = true;
-
-    const fetchModels = async () => {
-      try {
-        const models = await invoke<AvailableModel[]>("fetch_models");
-        if (!mounted) return;
-
-        const normalized = Array.from(
-          new Set(
-            models
-              .filter((m) => m.isAvailable !== false)
-              .map((m) => (m.model || m.id || m.name || "").trim())
-              .filter(Boolean)
-          )
-        );
-
-        setAvailableModels(normalized);
-      } catch {
-        if (mounted) {
-          setAvailableModels([]);
-        }
-      }
-    };
-
-    fetchModels();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const modelOptions = useMemo(() => {
-    const base = availableModels.length > 0 ? availableModels : FALLBACK_MODELS;
-    if (selectedModel && !base.includes(selectedModel)) {
-      return [selectedModel, ...base];
-    }
-    return base;
-  }, [availableModels, selectedModel]);
-
-  const displayModel = useMemo(() => {
-    const rawModel = selectedModel || modelOptions[0] || "";
-    if (!rawModel) {
-      return "Set in settings";
-    }
-
-    return rawModel
-      .split("-")
-      .map((part, index) => {
-        if (!part) {
-          return part;
-        }
-
-        if (index === 0) {
-          return part.toUpperCase();
-        }
-
-        return /^\d+(\.\d+)*$/.test(part)
-          ? part
-          : part.charAt(0).toUpperCase() + part.slice(1);
-      })
-      .join("-");
-  }, [modelOptions, selectedModel]);
+  
 
   return (
     <div className="relative flex-1">
@@ -126,16 +50,6 @@ export const Input = ({
       >
         <PopoverTrigger asChild className="!border-none !bg-transparent">
           <div className="relative select-none">
-            <div className="absolute left-1 top-1/2 z-10 -translate-y-1/2">
-              <div
-                className="flex h-7 max-w-[170px] items-center rounded-full border border-border/60 bg-muted/50 px-3 shadow-sm backdrop-blur-sm"
-                title={selectedModel || modelOptions[0] || "Model selected in settings"}
-              >
-                <span className="truncate text-[10px] font-medium text-foreground/90">
-                  {displayModel}
-                </span>
-              </div>
-            </div>
             <InputComponent
               ref={inputRef}
               placeholder="Ask me anything..."
@@ -146,8 +60,8 @@ export const Input = ({
               disabled={isLoading || isHidden}
               className={`${
                 currentConversationId && conversationHistory.length > 0
-                  ? "pl-44 pr-14"
-                  : "pl-44 pr-2"
+                  ? "pl-3 pr-14"
+                  : "pl-3 pr-2"
               }`}
             />
 

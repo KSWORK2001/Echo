@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction } from "react";
 import { ScreenshotConfig, TYPE_PROVIDER } from "@/types";
-import { CursorType, CustomizableState } from "@/lib/storage";
+import { CursorType, CustomizableState, DetectabilityMode } from "@/lib/storage";
 
 export type IContextType = {
   systemPrompt: string;
@@ -39,6 +39,7 @@ export type IContextType = {
   toggleAppIconVisibility: (isVisible: boolean) => Promise<void>;
   toggleAlwaysOnTop: (isEnabled: boolean) => Promise<void>;
   toggleAutostart: (isEnabled: boolean) => Promise<void>;
+  toggleDetectabilityMode: (mode: DetectabilityMode) => Promise<void>;
   loadData: () => void;
   echoApiEnabled: boolean;
   setEchoApiEnabled: (enabled: boolean) => Promise<void>;

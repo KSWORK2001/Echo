@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useMenuItems, useVersion } from "@/hooks";
-import echoLogo from "../../images/Echo.png";
+import echoLogo from "../../images/EchoPNG.png";
 
 export const Sidebar = () => {
   const { version, isLoading } = useVersion();

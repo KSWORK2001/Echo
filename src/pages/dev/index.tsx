@@ -22,6 +22,25 @@ const LOCAL_PROVIDER_ID = "local-transformers";
 const OPENAI_STT_PROVIDER_ID = "openai-whisper";
 const LOCAL_CACHE_DIRECTORY_STORAGE_KEY = "local_hf_cache_directory";
 const OPENAI_STT_MODEL = "whisper-1";
+const DEV_MODELS_BY_PROVIDER_STORAGE_KEY = "dev_reasoning_models_by_provider";
+
+const DEFAULT_REASONING_MODELS_BY_PROVIDER: Record<ReasoningProviderId, string[]> = {
+  [OPENAI_PROVIDER_ID]: [
+    "gpt-5.4-2026-03-05",
+    "gpt-5.4-mini-2026-03-17",
+    "gpt-5.4-nano-2026-03-17",
+  ],
+  [CLAUDE_PROVIDER_ID]: [
+    "gpt-5.4-2026-03-05",
+    "gpt-5.4-mini-2026-03-17",
+    "gpt-5.4-nano-2026-03-17",
+  ],
+  [LOCAL_PROVIDER_ID]: [
+    "gpt-5.4-2026-03-05",
+    "gpt-5.4-mini-2026-03-17",
+    "gpt-5.4-nano-2026-03-17",
+  ],
+};
 
 type ReasoningProviderId =
   | typeof OPENAI_PROVIDER_ID
@@ -37,25 +56,34 @@ const REASONING_PROVIDER_OPTIONS: {
   { label: "Local (Transformers / Hugging Face)", value: LOCAL_PROVIDER_ID },
 ];
 
-const REASONING_MODELS_BY_PROVIDER: Record<ReasoningProviderId, string[]> = {
-  [OPENAI_PROVIDER_ID]: [
-    "gpt-5.4",
-    "gpt-5.4-mini-2026-03-17",
-    "gpt-5.4-nano-2026-03-17",
-  ],
-  [CLAUDE_PROVIDER_ID]: [
-    "claude-opus-4-6",
-    "claude-sonnet-4-6",
-    "claude-opus-4-5",
-    "claude-sonnet-4-5",
-  ],
-  [LOCAL_PROVIDER_ID]: ["local-transformers-model"],
-};
-
 const DEFAULT_MODEL_BY_PROVIDER: Record<ReasoningProviderId, string> = {
   [OPENAI_PROVIDER_ID]: "gpt-5.4-mini-2026-03-17",
-  [CLAUDE_PROVIDER_ID]: "claude-sonnet-4-6",
-  [LOCAL_PROVIDER_ID]: "local-transformers-model",
+  [CLAUDE_PROVIDER_ID]: "gpt-5.4-mini-2026-03-17",
+  [LOCAL_PROVIDER_ID]: "gpt-5.4-mini-2026-03-17",
+};
+
+const getReasoningModelsByProvider = (): Record<ReasoningProviderId, string[]> => {
+  try {
+    const raw = localStorage.getItem(DEV_MODELS_BY_PROVIDER_STORAGE_KEY);
+    if (!raw) {
+      return DEFAULT_REASONING_MODELS_BY_PROVIDER;
+    }
+
+    const parsed = JSON.parse(raw) as Partial<Record<ReasoningProviderId, string[]>>;
+    return {
+      [OPENAI_PROVIDER_ID]:
+        parsed[OPENAI_PROVIDER_ID]?.filter(Boolean) ||
+        DEFAULT_REASONING_MODELS_BY_PROVIDER[OPENAI_PROVIDER_ID],
+      [CLAUDE_PROVIDER_ID]:
+        parsed[CLAUDE_PROVIDER_ID]?.filter(Boolean) ||
+        DEFAULT_REASONING_MODELS_BY_PROVIDER[CLAUDE_PROVIDER_ID],
+      [LOCAL_PROVIDER_ID]:
+        parsed[LOCAL_PROVIDER_ID]?.filter(Boolean) ||
+        DEFAULT_REASONING_MODELS_BY_PROVIDER[LOCAL_PROVIDER_ID],
+    };
+  } catch {
+    return DEFAULT_REASONING_MODELS_BY_PROVIDER;
+  }
 };
 
 const DevSpace = () => {
@@ -72,6 +100,11 @@ const DevSpace = () => {
     useState<ReasoningProviderId>(OPENAI_PROVIDER_ID);
   const [reasoningApiKey, setReasoningApiKey] = useState("");
   const [whisperApiKey, setWhisperApiKey] = useState("");
+  const [reasoningModelsByProvider, setReasoningModelsByProvider] = useState<
+    Record<ReasoningProviderId, string[]>
+  >(() => getReasoningModelsByProvider());
+  const [modelEditorVisible, setModelEditorVisible] = useState(false);
+  const [modelEditorValue, setModelEditorValue] = useState("");
   const [reasoningModel, setReasoningModel] = useState(
     DEFAULT_MODEL_BY_PROVIDER[OPENAI_PROVIDER_ID]
   );
@@ -120,9 +153,31 @@ const DevSpace = () => {
   };
 
   const availableReasoningModels = useMemo(
-    () => REASONING_MODELS_BY_PROVIDER[reasoningProvider],
-    [reasoningProvider]
+    () =>
+      reasoningModelsByProvider[reasoningProvider]?.length > 0
+        ? reasoningModelsByProvider[reasoningProvider]
+        : DEFAULT_REASONING_MODELS_BY_PROVIDER[reasoningProvider],
+    [reasoningModelsByProvider, reasoningProvider]
   );
+
+  useEffect(() => {
+    const handleHiddenToggle = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toLowerCase().includes("mac");
+      const modifier = isMac ? e.metaKey : e.ctrlKey;
+
+      if (modifier && e.altKey && e.shiftKey && e.key.toLowerCase() === "m") {
+        e.preventDefault();
+        setModelEditorVisible((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleHiddenToggle);
+    return () => window.removeEventListener("keydown", handleHiddenToggle);
+  }, []);
+
+  useEffect(() => {
+    setModelEditorValue(availableReasoningModels.join("\n"));
+  }, [availableReasoningModels]);
 
   useEffect(() => {
     const resolvedProvider =
@@ -132,7 +187,9 @@ const DevSpace = () => {
         ? (selectedAIProvider.provider as ReasoningProviderId)
         : OPENAI_PROVIDER_ID;
 
-    const providerModels = REASONING_MODELS_BY_PROVIDER[resolvedProvider];
+    const providerModels =
+      reasoningModelsByProvider[resolvedProvider] ||
+      DEFAULT_REASONING_MODELS_BY_PROVIDER[resolvedProvider];
     const resolvedModel = providerModels.includes(
       selectedAIProvider.variables?.model || ""
     )
@@ -166,7 +223,7 @@ const DevSpace = () => {
     );
 
     initializedRef.current = true;
-  }, []);
+  }, [reasoningModelsByProvider]);
 
   const handleReasoningApiKeyChange = (
     value: string | ChangeEvent<HTMLInputElement>
@@ -205,7 +262,9 @@ const DevSpace = () => {
 
   const handleReasoningProviderChange = (value: string) => {
     const nextProvider = value as ReasoningProviderId;
-    const currentModels = REASONING_MODELS_BY_PROVIDER[nextProvider];
+    const currentModels =
+      reasoningModelsByProvider[nextProvider] ||
+      DEFAULT_REASONING_MODELS_BY_PROVIDER[nextProvider];
     const nextModel = currentModels.includes(reasoningModel)
       ? reasoningModel
       : DEFAULT_MODEL_BY_PROVIDER[nextProvider];
@@ -227,6 +286,37 @@ const DevSpace = () => {
       nextWhisperKey,
       localCacheDirectory
     );
+  };
+
+  const saveDevModels = () => {
+    const parsed = modelEditorValue
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    const nextModels = parsed.length
+      ? parsed
+      : DEFAULT_REASONING_MODELS_BY_PROVIDER[reasoningProvider];
+
+    const next = {
+      ...reasoningModelsByProvider,
+      [reasoningProvider]: nextModels,
+    };
+
+    setReasoningModelsByProvider(next);
+    localStorage.setItem(DEV_MODELS_BY_PROVIDER_STORAGE_KEY, JSON.stringify(next));
+
+    if (!nextModels.includes(reasoningModel)) {
+      const nextModel = nextModels[0];
+      setReasoningModel(nextModel);
+      applyConfiguration(
+        reasoningProvider,
+        nextModel,
+        reasoningApiKey,
+        whisperApiKey,
+        localCacheDirectory
+      );
+    }
   };
 
   const handleReasoningModelChange = (value: string) => {
@@ -512,6 +602,32 @@ const DevSpace = () => {
                   />
                 </div>
               )}
+
+              {modelEditorVisible ? (
+                <div className="space-y-2 rounded-lg border border-dashed border-border/70 p-4">
+                  <Header
+                    title="Hidden Model Editor"
+                    description="Dev-only model override. One model ID per line."
+                  />
+                  <textarea
+                    value={modelEditorValue}
+                    onChange={(e) => setModelEditorValue(e.target.value)}
+                    className="w-full min-h-28 rounded-md border border-input/50 bg-background px-3 py-2 text-sm"
+                    placeholder="gpt-5.4-2026-03-05\ngpt-5.4-mini-2026-03-17\ngpt-5.4-nano-2026-03-17"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        setModelEditorValue(availableReasoningModels.join("\n"))
+                      }
+                    >
+                      Reset
+                    </Button>
+                    <Button onClick={saveDevModels}>Save Models</Button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </section>
 

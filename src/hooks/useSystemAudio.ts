@@ -3,7 +3,7 @@ import { useWindowResize, useGlobalShortcuts } from ".";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useApp } from "@/contexts";
-import { fetchSTT, fetchAIResponse } from "@/lib/functions";
+import { fetchSTT, fetchAIResponse, sanitizeSpokenScript } from "@/lib/functions";
 import {
   DEFAULT_QUICK_ACTIONS,
   DEFAULT_SYSTEM_PROMPT,
@@ -83,6 +83,8 @@ export function useSystemAudio() {
   const [accumulatedTranscript, setAccumulatedTranscript] = useState<string>("");
   const [isSpeechActive, setIsSpeechActive] = useState<boolean>(false);
   const [isMicActive, setIsMicActive] = useState<boolean>(false);
+  const [detectedMeetingPlatform, setDetectedMeetingPlatform] =
+    useState<string | null>(null);
 
   const [conversation, setConversation] = useState<ChatConversation>({
     id: "",
@@ -569,7 +571,9 @@ export function useSystemAudio() {
           for await (const chunk of fetchAIResponse({
             provider,
             selectedProvider: selectedAIProvider,
-            systemPrompt: prompt,
+            systemPrompt: detectedMeetingPlatform
+              ? `${prompt} Live context: detected conferencing platform is ${detectedMeetingPlatform}. Keep wording natural for that platform and avoid mentioning detection explicitly.`
+              : prompt,
             history: previousMessages,
             userMessage: transcription,
             imagesBase64: [],
@@ -586,6 +590,9 @@ export function useSystemAudio() {
         }
 
         if (fullResponse && !controller.signal.aborted) {
+          const cleanedResponse = sanitizeSpokenScript(fullResponse);
+          setLastAIResponse(cleanedResponse);
+
           const timestamp = Date.now();
           setConversation((prev) => ({
             ...prev,
@@ -599,7 +606,7 @@ export function useSystemAudio() {
               {
                 id: generateMessageId("assistant", timestamp + 1),
                 role: "assistant" as const,
-                content: fullResponse,
+                content: cleanedResponse,
                 timestamp: timestamp + 1,
               },
               ...prev.messages,
@@ -644,6 +651,13 @@ export function useSystemAudio() {
       setAccumulatedTranscript("");
       accumulatedTranscriptRef.current = "";
       setIsSpeechActive(false);
+
+      try {
+        const platform = await invoke<string | null>("detect_meeting_platform");
+        setDetectedMeetingPlatform(platform ?? null);
+      } catch {
+        setDetectedMeetingPlatform(null);
+      }
 
       // Stop any existing capture
       await invoke<string>("stop_system_audio_capture");
