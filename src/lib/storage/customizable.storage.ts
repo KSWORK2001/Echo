@@ -1,5 +1,7 @@
 import { STORAGE_KEYS } from "@/config";
 
+const DETECTABILITY_VERSION_KEY = "echo_detectability_v1";
+
 export type CursorType = "invisible" | "default" | "auto";
 export type DetectabilityMode = "undetectable" | "detectable";
 
@@ -41,14 +43,21 @@ export const getCustomizableState = (): CustomizableState => {
 
     const parsedState = JSON.parse(stored);
 
+    // Force reset detectability to undetectable on first run after this update
+    const hasMigrated = localStorage.getItem(DETECTABILITY_VERSION_KEY);
+    let detectability = parsedState.detectability || DEFAULT_CUSTOMIZABLE_STATE.detectability;
+    if (!hasMigrated) {
+      detectability = { mode: "undetectable" };
+      localStorage.setItem(DETECTABILITY_VERSION_KEY, "true");
+    }
+
     return {
       appIcon: parsedState.appIcon || DEFAULT_CUSTOMIZABLE_STATE.appIcon,
       alwaysOnTop:
         parsedState.alwaysOnTop || DEFAULT_CUSTOMIZABLE_STATE.alwaysOnTop,
       autostart: parsedState.autostart || DEFAULT_CUSTOMIZABLE_STATE.autostart,
       cursor: parsedState.cursor || DEFAULT_CUSTOMIZABLE_STATE.cursor,
-      detectability:
-        parsedState.detectability || DEFAULT_CUSTOMIZABLE_STATE.detectability,
+      detectability,
     };
   } catch (error) {
     console.error("Failed to get customizable state:", error);

@@ -223,9 +223,7 @@ const Settings = () => {
                   <p className="text-xs text-muted-foreground">
                     Undetectable mode applies OS content protection to block casual screen capture. Detectable mode turns that off.
                   </p>
-                  <p className="text-[11px] text-amber-600 dark:text-amber-400">
-                    Warning: no software mode can guarantee invisibility against every capture method.
-                  </p>
+
                 </div>
                 <Select
                   value={customizable.detectability.mode}

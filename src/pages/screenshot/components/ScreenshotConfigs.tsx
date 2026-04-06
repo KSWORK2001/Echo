@@ -62,18 +62,6 @@ export const ScreenshotConfigs = ({
           </Select>
         </div>
       </div>
-
-      {/* Tips */}
-      <div className="text-xs text-muted-foreground/70">
-        <p>
-          💡 <strong>Tip:</strong>{" "}
-          {screenshotConfiguration.enabled
-            ? "Screenshot mode captures the full screen with one click."
-            : "Selection mode lets you choose specific areas to capture."}{" "}
-          Screenshots are added to your attached files. You can capture multiple
-          and submit them with your own prompt.
-        </p>
-      </div>
     </div>
   );
 };
