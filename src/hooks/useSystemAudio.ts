@@ -324,22 +324,7 @@ export function useSystemAudio() {
                 setLastTranscription(updated);
                 setError("");
 
-                // Only send speaker transcription to AI (not mic)
-                if (speakerTrimmed) {
-                  const effectiveSystemPrompt = useSystemPrompt
-                    ? systemPrompt || DEFAULT_SYSTEM_PROMPT
-                    : contextContent || DEFAULT_SYSTEM_PROMPT;
-
-                  const previousMessages = conversation.messages.map((msg) => {
-                    return { role: msg.role, content: msg.content };
-                  });
-
-                  await processWithAI(
-                    speakerTrimmed,
-                    effectiveSystemPrompt,
-                    previousMessages
-                  );
-                }
+                // Transcript is captured continuously, but AI is triggered explicitly via quick actions.
               } else {
                 setError("Received empty transcription");
               }
@@ -369,7 +354,7 @@ export function useSystemAudio() {
     capturing,
     selectedSttProvider,
     allSttProviders,
-    conversation.messages.length,
+    conversation.messages,
   ]);
 
   // Context management functions
@@ -446,37 +431,16 @@ export function useSystemAudio() {
       ? systemPrompt || DEFAULT_SYSTEM_PROMPT
       : contextContent || DEFAULT_SYSTEM_PROMPT;
 
-    // Include the most recent transcription in conversation history if it exists
-    let updatedMessages = [...conversation.messages];
-
-    if (lastTranscription && lastTranscription.trim()) {
-      const lastMessage = updatedMessages[updatedMessages.length - 1];
-      // Only add if it's not already the last message
-      if (!lastMessage || lastMessage.content !== lastTranscription) {
-        const timestamp = Date.now();
-        const userMessage = {
-          id: generateMessageId("user", timestamp),
-          role: "user" as const,
-          content: lastTranscription,
-          timestamp,
-        };
-        updatedMessages.push(userMessage);
-
-        // Update conversation state with the latest transcription
-        setConversation((prev) => ({
-          ...prev,
-          messages: [userMessage, ...prev.messages],
-          updatedAt: timestamp,
-          title: prev.title || generateConversationTitle(lastTranscription),
-        }));
-      }
-    }
-
-    const previousMessages = updatedMessages.map((msg) => {
+    const previousMessages = conversation.messages.map((msg) => {
       return { role: msg.role, content: msg.content };
     });
 
-    await processWithAI(action, effectiveSystemPrompt, previousMessages);
+    const transcriptContext = accumulatedTranscriptRef.current.trim();
+    const quickActionPrompt = transcriptContext
+      ? `${action}\n\nUse this live transcript context to craft the best response to say right now:\n${transcriptContext}`
+      : action;
+
+    await processWithAI(quickActionPrompt, effectiveSystemPrompt, previousMessages);
   };
 
   // Helper: stop mic recording and clean up
@@ -538,7 +502,8 @@ export function useSystemAudio() {
     async (
       transcription: string,
       prompt: string,
-      previousMessages: Message[]
+      previousMessages: Message[],
+      imagesBase64: string[] = []
     ) => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -576,7 +541,7 @@ export function useSystemAudio() {
               : prompt,
             history: previousMessages,
             userMessage: transcription,
-            imagesBase64: [],
+            imagesBase64,
             signal: controller.signal,
           })) {
             if (controller.signal.aborted) break;
@@ -622,7 +587,7 @@ export function useSystemAudio() {
         // No auto-restart - user manually controls when to start next recording
       }
     },
-    [selectedAIProvider, allAiProviders, conversation.messages]
+    [selectedAIProvider, allAiProviders]
   );
 
   const startCapture = useCallback(async () => {
@@ -648,6 +613,7 @@ export function useSystemAudio() {
 
       setCapturing(true);
       setIsPopoverOpen(true);
+      setShowQuickActions(true);
       setAccumulatedTranscript("");
       accumulatedTranscriptRef.current = "";
       setIsSpeechActive(false);

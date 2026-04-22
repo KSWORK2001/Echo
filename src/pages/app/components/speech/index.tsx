@@ -30,7 +30,6 @@ export const SystemAudio = (props: useSystemAudioType) => {
     capturing,
     isProcessing,
     isAIProcessing,
-    lastTranscription,
     lastAIResponse,
     error,
     setupRequired,
@@ -43,7 +42,6 @@ export const SystemAudio = (props: useSystemAudioType) => {
     contextContent,
     setContextContent,
     startNewConversation,
-    conversation,
     resizeWindow,
     quickActions,
     addQuickAction,
@@ -53,38 +51,18 @@ export const SystemAudio = (props: useSystemAudioType) => {
     showQuickActions,
     setShowQuickActions,
     handleQuickActionClick,
+    processWithAI,
+    conversation,
     vadConfig,
     updateVadConfiguration,
     scrollAreaRef,
-    isSpeechActive,
   } = props;
 
   const { supportsImages } = useApp();
 
-  // View mode toggle
-  const [conversationMode, setConversationMode] = useState(true);
-
   // Screenshot state
   const [screenshotImage, setScreenshotImage] = useState<string | null>(null);
   const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
-
-  const hasResponse = lastAIResponse || isAIProcessing;
-
-  // Keyboard shortcut for Cmd+K to toggle view mode
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isPopoverOpen) return;
-
-      // Cmd+K or Ctrl+K to toggle view mode
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setConversationMode((prev) => !prev);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isPopoverOpen]);
 
   // Reset screenshot when processing starts (message is being sent)
   useEffect(() => {
@@ -129,12 +107,36 @@ export const SystemAudio = (props: useSystemAudioType) => {
       });
 
       setScreenshotImage(base64);
+
+      const transcriptContext = "";
+      const screenshotAction = transcriptContext
+        ? `What should I say?\n\nUse this live transcript context plus the screenshot to craft the best response to say right now:\n${transcriptContext}`
+        : "What should I say?";
+
+      const effectiveSystemPrompt = useSystemPrompt
+        ? ""
+        : contextContent || "";
+
+      const previousMessages = conversation.messages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      }));
+
+      await processWithAI(screenshotAction, effectiveSystemPrompt, previousMessages, [
+        base64,
+      ]);
     } catch (err) {
       console.error("Failed to capture screenshot:", err);
     } finally {
       setIsCapturingScreenshot(false);
     }
-  }, [isCapturingScreenshot]);
+  }, [
+    isCapturingScreenshot,
+    processWithAI,
+    conversation,
+    useSystemPrompt,
+    contextContent,
+  ]);
 
   const handleRemoveScreenshot = useCallback(() => {
     setScreenshotImage(null);
@@ -312,13 +314,8 @@ export const SystemAudio = (props: useSystemAudioType) => {
                   <>
                     {/* AI Response */}
                     <ResultsSection
-                      lastTranscription={lastTranscription}
                       lastAIResponse={lastAIResponse}
                       isAIProcessing={isAIProcessing}
-                      isSpeechActive={isSpeechActive}
-                      conversation={conversation}
-                      conversationMode={conversationMode}
-                      setConversationMode={setConversationMode}
                     />
 
                     {/* Settings Panel */}
@@ -339,7 +336,7 @@ export const SystemAudio = (props: useSystemAudioType) => {
             </ScrollArea>
 
             {/* Quick Actions */}
-            {!setupRequired && hasResponse && (
+            {!setupRequired && (
               <div className="flex-shrink-0 border-t border-border/50 p-2">
                 <QuickActions
                   actions={quickActions}

@@ -19,7 +19,7 @@ import {
   SPEAKABLE_RESPONSE_INSTRUCTIONS,
 } from "@/config/constants";
 
-const PROFESSIONAL_INTERVIEW_VOICE_INSTRUCTIONS = `Act like a professional interview response coach. Default to producing a smooth, spoken response the user can say aloud in a college-professional tone. Use first-person language only when the user is asking for a direct personal answer, introduction, or interview response to speak as themselves. For factual, analytical, or general questions, do not force the reply to start from I, me, or my. Keep the wording natural, credible, and ready for live conversation.`;
+const PROFESSIONAL_INTERVIEW_VOICE_INSTRUCTIONS = `Act like a high-performing interview and meeting response coach. Produce spoken answers that sound natural, polished, and credible in live conversation. Mirror the user's intended voice: confident, direct, and specific. Prefer concrete examples and measurable outcomes when context supports them. Keep wording concise and human, avoid robotic filler, and avoid generic motivational phrasing. Use first person when the user needs a personal response to say aloud; for factual prompts, use the most natural structure without forcing first person.`;
 
 const SUGGESTION_PREFIX_PATTERNS: RegExp[] = [
   /^if you want,?\s+i can\b/i,

@@ -1,0 +1,44 @@
+Hi Sarah, thanks for having me. I’m excited to be here.
+
+I’m Karan Shrivastava, an AI engineer with strong full-stack experience, and I’ve spent a lot of time building user-facing AI products, which has given me a solid front-end foundation as well. I’d love to learn more about the platform team and how this senior front-end role fits into your broader product and engineering roadmap.
+
+
+
+I’ve worked with both React and TypeScript in production-style full-stack builds and personal products. My strongest examples are projects where I owned the front end end-to-end.
+
+For example, I built Echo, a desktop AI meeting assistant using React 19 and TypeScript, where I focused on building a fast, polished user-facing experience while integrating real-time transcription and multi-provider LLM workflows . I also built a Financial Market Analyzer with a Next.js frontend and containerized deployment, which gave me experience structuring frontend and backend services cleanly for local and production environments .
+
+More broadly, TypeScript, JavaScript, React, and Next.js are all part of my core stack, and in one of my recent roles I delivered a full-stack solution with a Python backend and Next.js frontend that helped reduce deployment time from weeks to days .
+
+So while my background is broader than pure front-end, I’m very comfortable building modern React and TypeScript applications, owning UI architecture, and working across the boundary between frontend product experience and backend systems.
+
+
+
+One strong example is my C++ inference optimization work at Cognizant. I took Python-based inference bottlenecks and replaced them with high-performance C++ services for large-scale AI workloads. That improved throughput by 28%, reduced inference latency by 32%, and lowered memory usage by 18% while making the system scalable enough for production use across 1,200+ engineers
+
+If you want a more user-facing example, I also built Echo, a desktop AI meeting assistant, where I focused on runtime efficiency from the start. By using Tauri and Rust instead of Electron, I got the app down to a 10MB footprint, achieved sub-100ms cold start, and used 50% less RAM than Electron-based alternatives
+
+A concise way to say it: “I recently worked on optimizing AI inference performance by replacing Python bottlenecks with C++ services. The main improvements were 28% higher throughput, 32% lower latency, and 18% lower memory usage in production-scale workloads. On the product side, I also built a lightweight desktop app with sub-100ms cold start and 50% lower RAM usage by choosing a more efficient architecture.”
+
+
+
+The specific metrics I improved were:
+
+Throughput: up 28%
+Inference latency: down 32%
+Memory usage: down 18%
+That was from replacing Python inference bottlenecks with high-performance C++ services for large-scale AI workloads at Cognizant
+
+
+
+Yes. I’ve worked with structured state management patterns in React apps, though my resume doesn’t specifically list Redux Toolkit or Zustand by name. My background includes building production-style interfaces with React, TypeScript, and Next.js, including Echo in React 19 + TypeScript and a full-stack Next.js application at Southern Company, so I’m comfortable organizing state at scale and choosing the right pattern for the complexity of the app
+
+
+
+Yes, I’ve worked extensively with React and TypeScript in projects like Echo, which I built with React 19 and TypeScript, and I’ve also used Next.js in full-stack applications and dashboards . I haven’t used Redux Toolkit or Zustand heavily in my recent roles, but I’m very comfortable with React state patterns and would ramp up quickly on either. My usual approach is to keep local UI state close to components, separate server state from client state, and only introduce global state when multiple parts of the app truly need shared, predictable access.
+
+
+
+I’ve done both unit and integration-style testing as part of broader production engineering work. In my recent experience, I built CI/CD pipelines with automated testing across 10+ projects, which gave me a strong appreciation for making tests reliable, fast, and part of the delivery workflow rather than something bolted on later
+
+For React applications specifically, my approach is to unit test components, hooks, and utility logic in isolation, then add integration tests around key user flows like form interactions, API-driven state updates, and cross-component behavior. Since I’ve built React and Next.js applications like Echo and a full-stack market intelligence dashboard, I think a lot about testing the behaviors that matter most to users, especially around state changes, data flow, and edge cases in the UI

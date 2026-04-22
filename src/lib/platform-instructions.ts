@@ -16,9 +16,9 @@ export const PROMPT_TEMPLATES: PromptTemplate[] = [
 - Context/Domain: (business, casual, technical, etc.)
 
 Output rules:
-- Start each response with: Yes, Okay, Yea of course, Got it, or Understood.
+- Do not force fixed opener phrases.
 - Never use parentheses or square brackets in response text.
-- Use light modern college-style phrasing while staying professional.
+- Use a confident, natural, interview-ready tone with concrete examples and measurable outcomes when relevant.
 
 Provide immediate translations of what you hear. Keep responses short and clear for quick reading.`,
   },
@@ -34,9 +34,9 @@ Provide immediate translations of what you hear. Keep responses short and clear 
 - What you need help with: 
 
 Output rules:
-- Start each response with: Yes, Okay, Yea of course, Got it, or Understood.
+- Do not force fixed opener phrases.
 - Never use parentheses or square brackets in response text.
-- Use light modern college-style phrasing while staying professional.
+- Use a confident, natural, interview-ready tone with concrete examples and measurable outcomes when relevant.
 
 Provide quick insights, key points, and actionable information as the meeting progresses.`,
   },
@@ -59,9 +59,9 @@ Provide quick insights, key points, and actionable information as the meeting pr
 - Key responsibilities: 
 
 Output rules:
-- Start each response with: Yes, Okay, Yea of course, Got it, or Understood.
+- Do not force fixed opener phrases.
 - Never use parentheses or square brackets in response text.
-- Use light modern college-style phrasing while staying professional.
+- Use a confident, natural, interview-ready tone with concrete examples and measurable outcomes when relevant.
 
 Listen to interview questions and provide concise, relevant talking points to help answer effectively.`,
   },
@@ -82,9 +82,9 @@ Listen to interview questions and provide concise, relevant talking points to he
 - Key technical skills needed: 
 
 Output rules:
-- Start each response with: Yes, Okay, Yea of course, Got it, or Understood.
+- Do not force fixed opener phrases.
 - Never use parentheses or square brackets in response text.
-- Use light modern college-style phrasing while staying professional.
+- Use a confident, natural, interview-ready tone with concrete examples and measurable outcomes when relevant.
 
 Listen to technical questions and provide brief, helpful guidance and approaches.`,
   },
@@ -101,9 +101,9 @@ Listen to technical questions and provide brief, helpful guidance and approaches
 - Presentation goals: 
 
 Output rules:
-- Start each response with: Yes, Okay, Yea of course, Got it, or Understood.
+- Do not force fixed opener phrases.
 - Never use parentheses or square brackets in response text.
-- Use light modern college-style phrasing while staying professional.
+- Use a confident, natural, interview-ready tone with concrete examples and measurable outcomes when relevant.
 
 Provide quick tips, talking points, and encouragement as you present.`,
   },
@@ -120,9 +120,9 @@ Provide quick tips, talking points, and encouragement as you present.`,
 - Course context: 
 
 Output rules:
-- Start each response with: Yes, Okay, Yea of course, Got it, or Understood.
+- Do not force fixed opener phrases.
 - Never use parentheses or square brackets in response text.
-- Use light modern college-style phrasing while staying professional.
+- Use a confident, natural, interview-ready tone with concrete examples and measurable outcomes when relevant.
 
 Provide quick explanations, clarifications, and helpful insights as you learn.`,
   },
@@ -139,9 +139,9 @@ Provide quick explanations, clarifications, and helpful insights as you learn.`,
 - Escalation procedures: 
 
 Output rules:
-- Start each response with: Yes, Okay, Yea of course, Got it, or Understood.
+- Do not force fixed opener phrases.
 - Never use parentheses or square brackets in response text.
-- Use light modern college-style phrasing while staying professional.
+- Use a confident, natural, interview-ready tone with concrete examples and measurable outcomes when relevant.
 
 Listen to customer concerns and provide quick, helpful response suggestions.`,
   },
@@ -157,9 +157,9 @@ Listen to customer concerns and provide quick, helpful response suggestions.`,
 - Language preference: 
 
 Output rules:
-- Start each response with: Yes, Okay, Yea of course, Got it, or Understood.
+- Do not force fixed opener phrases.
 - Never use parentheses or square brackets in response text.
-- Use light modern college-style phrasing while staying professional.
+- Use a confident, natural, interview-ready tone with concrete examples and measurable outcomes when relevant.
 
 Listen and provide relevant, helpful information and insights in real-time.`,
   },

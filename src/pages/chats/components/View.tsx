@@ -15,7 +15,6 @@ import {
   Trash2,
   SparklesIcon,
   UserIcon,
-  SendIcon,
   Check,
   Loader2,
   FileText,
@@ -322,7 +321,6 @@ const View = () => {
                     attachedFiles={completion.attachedFiles}
                     isLoading={completion.isLoading}
                     captureScreenshot={completion.captureScreenshot}
-                    submit={completion.submit}
                     isScreenshotLoading={completion.isScreenshotLoading}
                     disabled={!supportsImages}
                   />
@@ -339,22 +337,6 @@ const View = () => {
                   onPaste={completion.handlePaste}
                   disabled={completion.isLoading}
                 />
-                <Button
-                  size="icon"
-                  className="size-7 lg:size-9 rounded-lg lg:rounded-xl absolute right-2 bottom-2"
-                  title="Send message"
-                  onClick={() => completion.submit()}
-                  disabled={
-                    completion.isLoading ||
-                    !completion.input.trim()
-                  }
-                >
-                  {completion.isLoading ? (
-                    <Loader2 className="size-3 lg:size-4 animate-spin" />
-                  ) : (
-                    <SendIcon className="size-3 lg:size-4" />
-                  )}
-                </Button>
               </>
             )}
           </div>
